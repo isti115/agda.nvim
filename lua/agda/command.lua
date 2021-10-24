@@ -1,9 +1,9 @@
 local function make (filename, payload)
-  return 'IOTCM "' .. filename .. '" NonInteractive Indirect (' .. payload .. ')'
+  return 'IOTCM "' .. filename .. '" NonInteractive Direct (' .. payload .. ')'
 end
 
 local function load (filename)
-  return '(Cmd_load "' .. filename .. '" [])'
+  return 'Cmd_load "' .. filename .. '" []'
 end
 
 local function version ()
@@ -14,9 +14,14 @@ local function case (goal, expression)
   return 'Cmd_make_case ' .. goal .. ' noRange "' .. expression .. '"'
 end
 
+local function context (goal)
+  return 'Cmd_context Simplified ' .. goal .. ' noRange ""'
+end
+
 return ({
+  case    = case,
+  context = context,
   load    = load,
   make    = make,
-  case    = case,
   version = version,
 })

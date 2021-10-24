@@ -25,12 +25,16 @@ nmap <C-c><C-c> :lua require('agda').case()<Return>
 - Goal types
 - Version info
 - Case splitting
+- Context
 
 ### In Progress
 - Syntax highlighting
 
 ### Planned
 - Refinement
-- Context
 - Auto
 - etc.
+
+## Thanks to
+- [u/algebrartist](https://www.reddit.com/r/agda/comments/qamibt/comment/hhm6jke) for help with the development on reddit
+- [banacorn](https://github.com/banacorn/agda-mode-vscode) for agda-mode-vscode and the description of the communication protocol
