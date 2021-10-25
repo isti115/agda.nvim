@@ -21,6 +21,21 @@ local function current_file ()
   return vim.api.nvim_buf_get_name(code_buf)
 end
 
+local function character_to_byte_map (content)
+  local position_map = {}
+  for i = 1, #content do
+    local b = string.byte(content, i)
+    -- skip unicode continuation characters
+    -- (https://en.wikipedia.org/wiki/UTF-8#Encoding)
+    if not (0x80 <= b and b < 0xc0) then
+      table.insert(position_map, i)
+    end
+  end
+  -- add position index after last character for exclusive ranges
+  table.insert(position_map, #content + 1)
+  return position_map
+end
+
 local function byte_to_line_col (byte)
   local line = vim.fn.byte2line(byte)
   local col = byte - vim.fn.line2byte(line)
@@ -109,10 +124,16 @@ local job = Job:new {
         false, message.clauses)
 
     elseif message.kind == 'HighlightingInfo' then
+      local position_map = character_to_byte_map(
+        table.concat(vim.api.nvim_buf_get_lines(code_buf, 0, -1, false), '\n')
+      )
+
       for _, hl in ipairs(message.info.payload) do
-        local from = byte_to_line_col(hl.range[1])
-        local to = byte_to_line_col(hl.range[2])
-        vim.api.nvim_buf_add_highlight(code_buf, hlns, 'agda' .. hl.atoms[1], from.line - 1, from.col, to.col)
+        local from = byte_to_line_col(position_map[hl.range[1]])
+        local to = byte_to_line_col(position_map[hl.range[2]])
+        vim.api.nvim_buf_add_highlight(
+          code_buf, hlns, 'agda' .. hl.atoms[1], from.line - 1, from.col, to.col
+        )
       end
 
     elseif message.kind == 'ClearHighlighting' then
