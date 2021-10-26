@@ -9,9 +9,37 @@ local command = require('agda.command')
 
 -- print('agda-mode loaded')
 
+local job
 local code_buf = 0
-local buf = vim.api.nvim_create_buf(false, true)
--- vim.api.nvim_buf_set_name(buf, 'Agda')
+
+local function find_or_create_buf (name)
+  for _, b in ipairs(vim.api.nvim_list_bufs()) do
+    -- if vim.api.nvim_buf_get_name(b) == name then -- returns the whole path
+    if vim.fn.bufname(b) == name then
+      return b
+    end
+  end
+
+  local new = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_name(new, name)
+  return new
+end
+
+local function find_or_create_win (buf)
+  for _, w in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_buf(w) == buf then
+      return w
+    end
+  end
+
+  vim.cmd('1new') -- open a new window below the current one with minimal height
+  local new = vim.api.nvim_get_current_win()
+  vim.api.nvim_win_set_buf(new, buf)
+
+  return new
+end
+
+local buf = find_or_create_buf('Agda')
 local win
 -- Highlighting Namespace
 local hlns = vim.api.nvim_create_namespace('Agda')
@@ -49,6 +77,8 @@ local function buf_option (option, value)
   vim.api.nvim_buf_set_option(buf, option, value)
 end
 
+buf_option('buftype', 'nofile')
+
 local function set_lines (from, to, lines)
   vim.api.nvim_buf_set_lines(buf, from, to, false, lines)
 end
@@ -72,93 +102,16 @@ local goals = {}
 local function print_goals ()
   for _, g in ipairs(goals) do
     set_lines(g.id, g.id, { '?' .. g.id .. ' : ' .. g.type })
-    -- vim.api.nvim_win_set_cursor(win, { 1, 1 })
+    vim.api.nvim_win_set_cursor(win, { 1, 1 })
   end
 end
-
-local job = Job:new {
-  command = 'agda',
-  args = {'--interaction-json'},
-  on_stdout = vim.schedule_wrap(function (_, data)
-    unlock()
-    local message = vim.fn.json_decode(string.sub(data, 1, 5) == 'JSON>' and string.sub(data, 6) or data)
-
-    -- print(vim.inspect(message))
-    if message.kind == 'DisplayInfo' then
-      if message.info.kind == 'AllGoalsWarnings' then
-        clear()
-        goals = {}
-
-        -- vim.api.nvim_win_set_height(win, table.getn(message.info.visibleGoals))
-        for _, g in ipairs(message.info.visibleGoals) do
-          table.insert(goals, {
-            id = g.constraintObj.id,
-            type = g.type,
-            range = g.constraintObj.range[1],
-          })
-        end
-
-        print_goals()
-
-      elseif message.info.kind == 'Context' then
-        -- print(vim.inspect(message))
-        clear()
-        for _, c in ipairs(message.info.context) do
-          -- set_lines(i - 1, i - 1, { c.reifiedName .. ' : ' .. c.binding })
-          buf_print(c.reifiedName .. ' : ' .. c.binding)
-        end
-
-      elseif message.info.kind == 'Version' then
-        set_lines(code_buf, -1, { 'Agda version:', message.info.version })
-        -- vim.api.nvim_win_set_height(win, 2)
-
-      elseif message.info.kind == 'Error' then
-        print('Error: ' .. message.info.error.message)
-
-      end
-
-    elseif message.kind == 'MakeCase' then
-      vim.api.nvim_buf_set_lines(code_buf,
-        message.interactionPoint.range[1].start.line - 1,
-        message.interactionPoint.range[1]['end'].line,
-        false, message.clauses)
-
-    elseif message.kind == 'HighlightingInfo' then
-      local position_map = character_to_byte_map(
-        table.concat(vim.api.nvim_buf_get_lines(code_buf, 0, -1, false), '\n')
-      )
-
-      for _, hl in ipairs(message.info.payload) do
-        local from = byte_to_line_col(position_map[hl.range[1]])
-        local to = byte_to_line_col(position_map[hl.range[2]])
-        vim.api.nvim_buf_add_highlight(
-          code_buf, hlns, 'agda' .. hl.atoms[1], from.line - 1, from.col, to.col
-        )
-      end
-
-    elseif message.kind == 'ClearHighlighting' then
-      vim.api.nvim_buf_clear_namespace(code_buf, hlns, 0, -1)
-
-    elseif message.kind == 'RunningInfo' then
-      print(message.message)
-
-    -- else
-    --   print(vim.inspect(message))
-
-    end
-
-    lock()
-  end)
-}
 
 local function send (message) job:send(message .. '\n') end
 
 local function window ()
-  vim.cmd('split')
-  win = vim.api.nvim_get_current_win()
-  vim.api.nvim_win_set_buf(win, buf)
-
-  vim.api.nvim_win_set_option(win, 'number', false)
+  local code = vim.api.nvim_get_current_win()
+  win = find_or_create_win(buf)
+  vim.api.nvim_set_current_win(code)
 end
 
 local function start ()
@@ -166,7 +119,9 @@ local function start ()
 end
 
 local function load ()
+  vim.api.nvim_command('silent write')
   if not job.stdin then start() end
+  window()
   send(command.make(
     current_file(),
     command.load(current_file())
@@ -235,6 +190,85 @@ local function context ()
     command.context(goal)
   ))
 end
+
+local function receive (_, data)
+  unlock()
+  local message = vim.fn.json_decode(string.sub(data, 1, 5) == 'JSON>' and string.sub(data, 6) or data)
+
+  -- print(vim.inspect(message))
+  if message.kind == 'DisplayInfo' then
+    if message.info.kind == 'AllGoalsWarnings' then
+      clear()
+      goals = {}
+
+      vim.api.nvim_win_set_height(win, #message.info.visibleGoals)
+      for _, g in ipairs(message.info.visibleGoals) do
+        table.insert(goals, {
+          id = g.constraintObj.id,
+          type = g.type,
+          range = g.constraintObj.range[1],
+        })
+      end
+
+      print_goals()
+
+    elseif message.info.kind == 'Context' then
+      -- print(vim.inspect(message))
+      clear()
+      for _, c in ipairs(message.info.context) do
+        -- set_lines(i - 1, i - 1, { c.reifiedName .. ' : ' .. c.binding })
+        buf_print(c.reifiedName .. ' : ' .. c.binding)
+      end
+
+    elseif message.info.kind == 'Version' then
+      set_lines(code_buf, -1, { 'Agda version:', message.info.version })
+      vim.api.nvim_win_set_height(win, 2)
+
+    elseif message.info.kind == 'Error' then
+      print('Error: ' .. message.info.error.message)
+
+    end
+
+  elseif message.kind == 'MakeCase' then
+    vim.api.nvim_buf_set_lines(code_buf,
+      message.interactionPoint.range[1].start.line - 1,
+      message.interactionPoint.range[1]['end'].line,
+      false, message.clauses)
+
+    load()
+
+  elseif message.kind == 'HighlightingInfo' then
+    local position_map = character_to_byte_map(
+      table.concat(vim.api.nvim_buf_get_lines(code_buf, 0, -1, false), '\n')
+    )
+
+    for _, hl in ipairs(message.info.payload) do
+      local from = byte_to_line_col(position_map[hl.range[1]])
+      local to = byte_to_line_col(position_map[hl.range[2]])
+      vim.api.nvim_buf_add_highlight(
+        code_buf, hlns, 'agda' .. hl.atoms[1], from.line - 1, from.col, to.col
+      )
+    end
+
+  elseif message.kind == 'ClearHighlighting' then
+    vim.api.nvim_buf_clear_namespace(code_buf, hlns, 0, -1)
+
+  elseif message.kind == 'RunningInfo' then
+    print(message.message)
+
+  -- else
+  --   print(vim.inspect(message))
+
+  end
+
+  lock()
+end
+
+job = Job:new {
+  command = 'agda',
+  args = {'--interaction-json'},
+  on_stdout = vim.schedule_wrap(receive)
+}
 
 return {
   case    = case,
