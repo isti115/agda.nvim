@@ -11,6 +11,7 @@ local command = require('agda.command')
 
 local job
 local code_buf = 0
+-- local code_win = 0
 
 local function find_or_create_buf (name)
   for _, b in ipairs(vim.api.nvim_list_bufs()) do
@@ -37,6 +38,22 @@ local function find_or_create_win (buf)
   vim.api.nvim_win_set_buf(new, buf)
 
   return new
+end
+
+local function get_cursor_position ()
+  local position = vim.api.nvim_win_get_cursor(code_buf)
+  local line, col = position[1], position[2] + 1
+  col = vim.fn.virtcol('.') -- Multi-byte workaround
+  -- col = vim.api.nvim_eval('virtcol(".")') -- Multi-byte workaround
+  -- https://www.reddit.com/r/agda/comments/qamibt/comment/hhjkp99
+  return {
+    line = line,
+    col = col,
+  }
+end
+
+local function is_before (a, b)
+  return a.line < b.line or (a.line == b.line and a.col <= b.col)
 end
 
 local buf = find_or_create_buf('Agda')
@@ -111,6 +128,7 @@ local function send (message) job:send(message .. '\n') end
 local function window ()
   local code = vim.api.nvim_get_current_win()
   win = find_or_create_win(buf)
+  vim.api.nvim_win_set_option(win, 'number', false)
   vim.api.nvim_set_current_win(code)
 end
 
@@ -119,6 +137,8 @@ local function start ()
 end
 
 local function load ()
+  vim.api.nvim_command('%s/?/{! !}/ge') -- TODO silent instead of e?
+  vim.api.nvim_command('noh') -- TODO find better solution
   vim.api.nvim_command('silent write')
   if not job.stdin then start() end
   window()
@@ -126,6 +146,50 @@ local function load ()
     current_file(),
     command.load(current_file())
   ))
+end
+
+local function find_surrounding_goals ()
+  local position = get_cursor_position()
+  position.col = position.col
+
+  if #goals < 1 then print('There are no goals in the current buffer.') end
+
+  local previous = goals[#goals]
+  local next = goals[1]
+
+  for _, g in ipairs(goals) do
+    if is_before(g.range['end'], position) then
+      previous = g
+    elseif is_before(position, g.range.start) then
+      next = g
+      return previous, next
+    end
+  end
+
+  return previous, next
+end
+
+local function back ()
+  local previous, _ = find_surrounding_goals()
+  -- vim.api.nvim_win_set_cursor(
+  --   code_win,
+  --   previous.range.start.line,
+  --   previous.range.start.col
+  -- ) -- doesn't count multi-byte...
+  vim.api.nvim_command(
+    'normal ' ..
+    previous.range.start.line .. 'G' ..
+    previous.range.start.col + 2 .. '|'
+  )
+end
+
+local function forward ()
+  local _, next = find_surrounding_goals()
+  vim.api.nvim_command(
+    'normal ' ..
+    next.range.start.line .. 'G' ..
+    next.range.start.col + 2 .. '|'
+  )
 end
 
 local function version ()
@@ -143,11 +207,13 @@ local function test ()
   print('pid: ', job.pid)
 end
 
-local function goal_for_position (line, col)
+local function goal_for_position (position)
   for _, g in pairs(goals) do
     -- `end` is a reserved keyword in lua...
-    if  g.range.start.line <= line and line <= g.range['end'].line
-    and g.range.start.col  <= col  and col  <= g.range['end'].col
+    -- if  g.range.start.line <= line and line <= g.range['end'].line
+    -- and g.range.start.col  <= col  and col  <= g.range['end'].col
+    if  is_before(g.range.start, position)
+    and is_before(position, g.range['end'])
     then
        return g.id
     end
@@ -155,12 +221,8 @@ local function goal_for_position (line, col)
 end
 
 local function goal_for_cursor ()
-  local position = vim.api.nvim_win_get_cursor(code_buf)
-  local line, col = position[1], position[2] + 1
-  col = vim.fn.virtcol('.') -- Multi-byte workaround
-  -- col = vim.api.nvim_eval('virtcol(".")') -- Multi-byte workaround
-  -- https://www.reddit.com/r/agda/comments/qamibt/comment/hhjkp99
-  return goal_for_position(line, col)
+  local position = get_cursor_position()
+  return goal_for_position(position)
 end
 
 local function case ()
@@ -177,6 +239,19 @@ local function case ()
     command.case(goal, expression)
   ))
 end
+
+-- local function refine ()
+--   local goal = goal_for_cursor()
+--   if not goal then
+--     print 'Place the cursor in a goal to refine!'
+--     return
+--   end
+--
+--   send(command.make(
+--     current_file(),
+--     command.refine(goal)
+--   ))
+-- end
 
 local function context ()
   local goal = goal_for_cursor()
@@ -215,6 +290,8 @@ local function receive (_, data)
     elseif message.info.kind == 'Context' then
       -- print(vim.inspect(message))
       clear()
+
+      vim.api.nvim_win_set_height(win, #message.info.context)
       for _, c in ipairs(message.info.context) do
         -- set_lines(i - 1, i - 1, { c.reifiedName .. ' : ' .. c.binding })
         buf_print(c.reifiedName .. ' : ' .. c.binding)
@@ -279,4 +356,6 @@ return {
   test    = test,
   version = version,
   window  = window,
+  forward = forward,
+  back    = back,
 }
