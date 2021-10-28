@@ -2,62 +2,43 @@
   Agda interaction plugin for NeoVim written in Lua
   István Donkó (Isti115@GitHub)
   Copyright (C) 2021
+
+  Terminology:
+    + nvim:
+      - top  : row number starting from zero
+      - left : byte offset from the beginning of the line
+      - byte : byte offset from the beginning of the file
+    + Agda:
+      - line : row number starting from one
+      - col  : character offset from the beginning of the line
+      - pos  : character offset from the beginning of the file
+
+  Notes:
+    * Agda uses `start` and `end` for the limits of ranges,
+      but `end` is a reserved keyword in Lua...
 --]]
 
 local Job = require('plenary.job')
-local command = require('agda.command')
+local utilities = require('agda.utilities')
+local output = require('agda.output')
+local commands = require('agda.commands')
 
 -- print('agda-mode loaded')
 
 local job
 local code_buf = 0
--- local code_win = 0
-
-local function find_or_create_buf (name)
-  for _, b in ipairs(vim.api.nvim_list_bufs()) do
-    -- if vim.api.nvim_buf_get_name(b) == name then -- returns the whole path
-    if vim.fn.bufname(b) == name then
-      return b
-    end
-  end
-
-  local new = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_name(new, name)
-  return new
+local code_win = 0
+local pos_to_byte
+local function update_pos_to_byte ()
+  pos_to_byte = utilities.character_to_byte_map(
+    table.concat(vim.api.nvim_buf_get_lines(code_buf, 0, -1, false), '\n')
+  )
 end
 
-local function find_or_create_win (buf)
-  for _, w in ipairs(vim.api.nvim_list_wins()) do
-    if vim.api.nvim_win_get_buf(w) == buf then
-      return w
-    end
-  end
-
-  vim.cmd('1new') -- open a new window below the current one with minimal height
-  local new = vim.api.nvim_get_current_win()
-  vim.api.nvim_win_set_buf(new, buf)
-
-  return new
+local function pos_to_line_left (pos)
+  return utilities.byte_to_line_left(pos_to_byte[pos])
 end
 
-local function get_cursor_position ()
-  local position = vim.api.nvim_win_get_cursor(code_buf)
-  local line, col = position[1], position[2] + 1
-  col = vim.fn.virtcol('.') -- Multi-byte workaround
-  -- col = vim.api.nvim_eval('virtcol(".")') -- Multi-byte workaround
-  -- https://www.reddit.com/r/agda/comments/qamibt/comment/hhjkp99
-  return {
-    line = line,
-    col = col,
-  }
-end
-
-local function is_before (a, b)
-  return a.line < b.line or (a.line == b.line and a.col <= b.col)
-end
-
-local buf = find_or_create_buf('Agda')
-local win
 -- Highlighting Namespace
 local hlns = vim.api.nvim_create_namespace('Agda')
 
@@ -66,91 +47,30 @@ local function current_file ()
   return vim.api.nvim_buf_get_name(code_buf)
 end
 
-local function character_to_byte_map (content)
-  local position_map = {}
-  for i = 1, #content do
-    local b = string.byte(content, i)
-    -- skip unicode continuation characters
-    -- (https://en.wikipedia.org/wiki/UTF-8#Encoding)
-    if not (0x80 <= b and b < 0xc0) then
-      table.insert(position_map, i)
-    end
-  end
-  -- add position index after last character for exclusive ranges
-  table.insert(position_map, #content + 1)
-  return position_map
-end
-
-local function byte_to_line_col (byte)
-  local line = vim.fn.byte2line(byte)
-  local col = byte - vim.fn.line2byte(line)
-  return {
-    line = line,
-    col  = col,
-  }
-end
-
-local function buf_option (option, value)
-  vim.api.nvim_buf_set_option(buf, option, value)
-end
-
-buf_option('buftype', 'nofile')
-
-local function set_lines (from, to, lines)
-  vim.api.nvim_buf_set_lines(buf, from, to, false, lines)
-end
-
-local function clear  () set_lines(code_buf, -1, {})     end
-local function lock   () buf_option('modifiable', false) end
-local function unlock () buf_option('modifiable', true)  end
-
-local function buf_print (text)
-  local lines = {}
-  for line in string.gmatch(text, '[^\r\n]+') do
-    table.insert(lines, line)
-  end
-
-  local last_line = vim.api.nvim_buf_line_count(buf) - 1
-  set_lines(last_line, last_line, lines)
-end
-
 local goals = {}
 
-local function print_goals ()
-  for _, g in ipairs(goals) do
-    set_lines(g.id, g.id, { '?' .. g.id .. ' : ' .. g.type })
-    vim.api.nvim_win_set_cursor(win, { 1, 1 })
-  end
-end
-
-local function send (message) job:send(message .. '\n') end
-
-local function window ()
-  local code = vim.api.nvim_get_current_win()
-  win = find_or_create_win(buf)
-  vim.api.nvim_win_set_option(win, 'number', false)
-  vim.api.nvim_set_current_win(code)
-end
-
-local function start ()
-  job:start()
-end
+local function start ()        job:start()               end
+local function stop  ()        job:shutdown()            end
+local function send  (message) job:send(message .. '\n') end
+local function test  ()        print('pid: ', job.pid)   end
 
 local function load ()
+  code_buf = vim.api.nvim_get_current_buf()
+  code_win = vim.api.nvim_get_current_win()
+
   vim.api.nvim_command('%s/?/{! !}/ge') -- TODO silent instead of e?
   vim.api.nvim_command('noh') -- TODO find better solution
   vim.api.nvim_command('silent write')
   if not job.stdin then start() end
-  window()
-  send(command.make(
+  output.open_window()
+  send(commands.make(
     current_file(),
-    command.load(current_file())
+    commands.load(current_file())
   ))
 end
 
 local function find_surrounding_goals ()
-  local position = get_cursor_position()
-  position.col = position.col
+  local position = utilities.get_cursor_position(code_win)
 
   if #goals < 1 then print('There are no goals in the current buffer.') end
 
@@ -158,15 +78,30 @@ local function find_surrounding_goals ()
   local next = goals[1]
 
   for _, g in ipairs(goals) do
-    if is_before(g.range['end'], position) then
+    if utilities.is_before(g.range['end'], position) then
       previous = g
-    elseif is_before(position, g.range.start) then
+    elseif utilities.is_before(position, g.range.start) then
       next = g
       return previous, next
     end
   end
 
   return previous, next
+end
+
+local function goal_for_position (position)
+  for _, g in pairs(goals) do
+    if  utilities.is_before(g.range.start, position)
+    and utilities.is_before(position, g.range['end'])
+    then
+       return g.id
+    end
+  end
+end
+
+local function goal_for_cursor ()
+  local position = utilities.get_cursor_position(code_win)
+  return goal_for_position(position)
 end
 
 local function back ()
@@ -193,36 +128,10 @@ local function forward ()
 end
 
 local function version ()
-  send(command.make(
+  send(commands.make(
     current_file(),
-    command.version()
+    commands.version()
   ))
-end
-
-local function stop ()
-  job:shutdown()
-end
-
-local function test ()
-  print('pid: ', job.pid)
-end
-
-local function goal_for_position (position)
-  for _, g in pairs(goals) do
-    -- `end` is a reserved keyword in lua...
-    -- if  g.range.start.line <= line and line <= g.range['end'].line
-    -- and g.range.start.col  <= col  and col  <= g.range['end'].col
-    if  is_before(g.range.start, position)
-    and is_before(position, g.range['end'])
-    then
-       return g.id
-    end
-  end
-end
-
-local function goal_for_cursor ()
-  local position = get_cursor_position()
-  return goal_for_position(position)
 end
 
 local function case ()
@@ -234,24 +143,37 @@ local function case ()
 
   local expression = vim.fn.input('case: ')
 
-  send(command.make(
+  send(commands.make(
     current_file(),
-    command.case(goal, expression)
+    commands.case(goal, expression)
   ))
 end
 
--- local function refine ()
---   local goal = goal_for_cursor()
---   if not goal then
---     print 'Place the cursor in a goal to refine!'
---     return
---   end
---
---   send(command.make(
---     current_file(),
---     command.refine(goal)
---   ))
--- end
+local function auto ()
+  local goal = goal_for_cursor()
+  if not goal then
+    print 'Place the cursor in a goal to invoke auto!'
+    return
+  end
+
+  send(commands.make(
+    current_file(),
+    commands.auto(goal)
+  ))
+end
+
+local function refine ()
+  local goal = goal_for_cursor()
+  if not goal then
+    print 'Place the cursor in a goal to refine!'
+    return
+  end
+
+  send(commands.make(
+    current_file(),
+    commands.refine(goal)
+  ))
+end
 
 local function context ()
   local goal = goal_for_cursor()
@@ -260,23 +182,29 @@ local function context ()
     return
   end
 
-  send(command.make(
+  send(commands.make(
     current_file(),
-    command.context(goal)
+    commands.context(goal)
   ))
 end
 
+local function window ()
+  output.open_window()
+end
+
 local function receive (_, data)
-  unlock()
-  local message = vim.fn.json_decode(string.sub(data, 1, 5) == 'JSON>' and string.sub(data, 6) or data)
+  output.unlock()
+  local message = vim.fn.json_decode(
+    string.sub(data, 1, 5) == 'JSON>' and string.sub(data, 6) or data
+  )
 
   -- print(vim.inspect(message))
   if message.kind == 'DisplayInfo' then
     if message.info.kind == 'AllGoalsWarnings' then
-      clear()
+      output.clear()
       goals = {}
 
-      vim.api.nvim_win_set_height(win, #message.info.visibleGoals)
+      output.set_height(#message.info.visibleGoals)
       for _, g in ipairs(message.info.visibleGoals) do
         table.insert(goals, {
           id = g.constraintObj.id,
@@ -285,21 +213,21 @@ local function receive (_, data)
         })
       end
 
-      print_goals()
+      output.print_goals(goals)
 
     elseif message.info.kind == 'Context' then
       -- print(vim.inspect(message))
-      clear()
+      output.clear()
 
-      vim.api.nvim_win_set_height(win, #message.info.context)
+      output.set_height(#message.info.context)
       for _, c in ipairs(message.info.context) do
         -- set_lines(i - 1, i - 1, { c.reifiedName .. ' : ' .. c.binding })
-        buf_print(c.reifiedName .. ' : ' .. c.binding)
+        output.buf_print(c.reifiedName .. ' : ' .. c.binding)
       end
 
     elseif message.info.kind == 'Version' then
-      set_lines(code_buf, -1, { 'Agda version:', message.info.version })
-      vim.api.nvim_win_set_height(win, 2)
+      output.set_lines(0, -1, { 'Agda version:', message.info.version })
+      output.set_height(2)
 
     elseif message.info.kind == 'Error' then
       print('Error: ' .. message.info.error.message)
@@ -314,16 +242,26 @@ local function receive (_, data)
 
     load()
 
+  elseif message.kind == 'GiveAction' then
+    update_pos_to_byte()
+    local range = message.interactionPoint.range[1]
+    local from = pos_to_line_left(range.start.pos)
+    local to = pos_to_line_left(range['end'].pos)
+
+    vim.api.nvim_buf_set_text(code_buf,
+      from.line - 1, from.left, to.line - 1, to.left,
+      { message.giveResult.str })
+
+    load()
+
   elseif message.kind == 'HighlightingInfo' then
-    local position_map = character_to_byte_map(
-      table.concat(vim.api.nvim_buf_get_lines(code_buf, 0, -1, false), '\n')
-    )
+    update_pos_to_byte()
 
     for _, hl in ipairs(message.info.payload) do
-      local from = byte_to_line_col(position_map[hl.range[1]])
-      local to = byte_to_line_col(position_map[hl.range[2]])
+      local from = pos_to_line_left(hl.range[1])
+      local to = pos_to_line_left(hl.range[2])
       vim.api.nvim_buf_add_highlight(
-        code_buf, hlns, 'agda' .. hl.atoms[1], from.line - 1, from.col, to.col
+        code_buf, hlns, 'agda' .. hl.atoms[1], from.line - 1, from.left, to.left
       )
     end
 
@@ -338,7 +276,7 @@ local function receive (_, data)
 
   end
 
-  lock()
+  output.lock()
 end
 
 job = Job:new {
@@ -348,14 +286,16 @@ job = Job:new {
 }
 
 return {
-  case    = case,
-  context = context,
-  load    = load,
   start   = start,
   stop    = stop,
   test    = test,
+  load    = load,
+  case    = case,
+  context = context,
   version = version,
-  window  = window,
   forward = forward,
   back    = back,
+  window  = window,
+  refine  = refine,
+  auto    = auto,
 }
