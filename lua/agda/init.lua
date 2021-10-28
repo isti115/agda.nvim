@@ -72,7 +72,10 @@ end
 local function find_surrounding_goals ()
   local position = utilities.get_cursor_position(code_win)
 
-  if #goals < 1 then print('There are no goals in the current buffer.') end
+  if #goals == 0 then
+    print('There are no goals in the currently loaded buffer.')
+    return
+  end
 
   local previous = goals[#goals]
   local next = goals[1]
@@ -105,6 +108,10 @@ local function goal_for_cursor ()
 end
 
 local function back ()
+  if #goals == 0 then
+    print('There are no goals in the currently loaded buffer.')
+    return
+  end
   local previous, _ = find_surrounding_goals()
   -- vim.api.nvim_win_set_cursor(
   --   code_win,
@@ -119,6 +126,10 @@ local function back ()
 end
 
 local function forward ()
+  if #goals == 0 then
+    print('There are no goals in the currently loaded buffer.')
+    return
+  end
   local _, next = find_surrounding_goals()
   vim.api.nvim_command(
     'normal ' ..
