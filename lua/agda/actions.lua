@@ -1,10 +1,8 @@
 local commands   = require('agda.commands')
 local connection = require('agda.connection')
 local output     = require('agda.output')
-local store      = require('agda.store')
-
-local state = store.state
-local utilities  = require('agda.utilities')(state)
+local state      = require('agda.state')
+local utilities  = require('agda.utilities')
 
 local function load ()
   state.code_buf = vim.api.nvim_get_current_buf()
@@ -12,7 +10,7 @@ local function load ()
 
   output.initialize()
 
-  vim.api.nvim_command('%s/?/{! !}/ge') -- TODO silent instead of e?
+  vim.api.nvim_command('%s/?/{!  !}/ge') -- TODO silent instead of e?
   vim.api.nvim_command('noh') -- TODO find better solution
   vim.api.nvim_command('silent write')
   if not (connection.is_alive()) then connection.start() end

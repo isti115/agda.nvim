@@ -1,9 +1,6 @@
-local output  = require('agda.output')
-local store   = require('agda.store')
--- local actions = require('agda.actions') -- causes circular dependency
-
-local state = store.state
-local utilities = require('agda.utilities')(state)
+local output    = require('agda.output')
+local state     = require('agda.state')
+local utilities = require('agda.utilities')
 
 local function handle (_, data)
   output.unlock()
@@ -43,7 +40,11 @@ local function handle (_, data)
       output.set_height(2)
 
     elseif message.info.kind == 'Error' then
-      print('Error: ' .. message.info.error.message)
+      -- print('Error: ' .. message.info.error.message)
+      output.clear()
+      local lines = output.buf_print(message.info.error.message)
+      output.set_height(lines)
+      vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
 
     end
 
@@ -53,10 +54,10 @@ local function handle (_, data)
       message.interactionPoint.range[1]['end'].line,
       false, message.clauses)
 
-    -- actions.load() -- causes circular dependency
+    return true -- the file needs to be reloaded
 
   elseif message.kind == 'GiveAction' then
-    store.update_pos_to_byte()
+    utilities.update_pos_to_byte()
     local range = message.interactionPoint.range[1]
     local from = utilities.pos_to_line_left(range.start.pos)
     local to = utilities.pos_to_line_left(range['end'].pos)
@@ -65,17 +66,19 @@ local function handle (_, data)
       from.line - 1, from.left, to.line - 1, to.left,
       { message.giveResult.str })
 
-    -- actions.load() -- causes circular dependency
+    return true -- the file needs to be reloaded
 
   elseif message.kind == 'HighlightingInfo' then
-    store.update_pos_to_byte()
+    utilities.update_pos_to_byte()
 
     for _, hl in ipairs(message.info.payload) do
-      local from = utilities.pos_to_line_left(hl.range[1])
-      local to = utilities.pos_to_line_left(hl.range[2])
-      vim.api.nvim_buf_add_highlight(
-        state.code_buf, state.hl_ns, 'agda' .. hl.atoms[1], from.line - 1, from.left, to.left
-      )
+      if #hl.atoms ~= 0 then -- TODO why is this sometimes empty? 🤔
+        local from = utilities.pos_to_line_left(hl.range[1])
+        local to = utilities.pos_to_line_left(hl.range[2])
+        vim.api.nvim_buf_add_highlight(
+          state.code_buf, state.hl_ns, 'agda' .. hl.atoms[1], from.line - 1, from.left, to.left
+        )
+      end
     end
 
   elseif message.kind == 'ClearHighlighting' then

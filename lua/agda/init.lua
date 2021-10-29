@@ -22,9 +22,7 @@
 local actions    = require('agda.actions')
 local connection = require('agda.connection')
 local output     = require('agda.output')
-local store      = require('agda.store')
-
-local state = store.state
+local state      = require('agda.state')
 
 -- print('agda-mode loaded')
 

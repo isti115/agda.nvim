@@ -1,7 +1,5 @@
-local store     = require('agda.store')
-
-local state = store.state
-local utilities  = require('agda.utilities')(state)
+local state     = require('agda.state')
+local utilities = require('agda.utilities')
 
 local function buf_option (option, value)
   vim.api.nvim_buf_set_option(state.output_buf, option, value)
@@ -30,6 +28,7 @@ local function buf_print (text)
 
   local last_line = vim.api.nvim_buf_line_count(state.output_buf) - 1
   set_lines(last_line, last_line, lines)
+  return #lines
 end
 
 local function print_goals (goals)

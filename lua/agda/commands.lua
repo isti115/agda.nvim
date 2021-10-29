@@ -27,11 +27,11 @@ local function context (goal)
 end
 
 return ({
+  auto    = auto,
   case    = case,
   context = context,
   load    = load,
   make    = make,
-  version = version,
-  auto    = auto,
   refine  = refine,
+  version = version,
 })

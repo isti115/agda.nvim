@@ -1,7 +1,5 @@
--- local store = require('agda.store')
--- local state = store.state
+local state = require('agda.state')
 
-return function (state) -- circular dependency workaround
 
 --[[ Buffer and window operations ]]--
 
@@ -75,6 +73,12 @@ local function character_to_byte_map (content)
   return position_map
 end
 
+local function update_pos_to_byte ()
+  state.pos_to_byte = character_to_byte_map(
+    table.concat(vim.api.nvim_buf_get_lines(state.code_buf, 0, -1, false), '\n')
+  )
+end
+
 local function byte_to_line_left (byte)
   local line = vim.fn.byte2line(byte)
   local left = byte - vim.fn.line2byte(line)
@@ -135,11 +139,10 @@ return {
   get_cursor_line_col    = get_cursor_line_col    ,
   is_before_line_col     = is_before_line_col     ,
   character_to_byte_map  = character_to_byte_map  ,
+  update_pos_to_byte     = update_pos_to_byte     ,
   byte_to_line_left      = byte_to_line_left      ,
   pos_to_line_left       = pos_to_line_left       ,
 
   find_surrounding_goals = find_surrounding_goals ,
   find_current_goal      = find_current_goal      ,
 }
-
-end
