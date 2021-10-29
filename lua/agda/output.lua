@@ -1,16 +1,21 @@
-local utilities = require('agda.utilities')
+local store     = require('agda.store')
 
-local buf = utilities.find_or_create_buf('Agda')
-local win
+local state = store.state
+local utilities  = require('agda.utilities')(state)
 
 local function buf_option (option, value)
-  vim.api.nvim_buf_set_option(buf, option, value)
+  vim.api.nvim_buf_set_option(state.output_buf, option, value)
 end
 
-buf_option('buftype', 'nofile')
+local function initialize ()
+  state.output_buf = utilities.find_or_create_buf('Agda')
+  state.output_win = utilities.find_or_create_win(state.output_buf)
+  vim.api.nvim_win_set_option(state.output_win, 'number', false)
+  buf_option('buftype', 'nofile')
+end
 
 local function set_lines (from, to, lines)
-  vim.api.nvim_buf_set_lines(buf, from, to, false, lines)
+  vim.api.nvim_buf_set_lines(state.output_buf, from, to, false, lines)
 end
 
 local function clear  () set_lines(0, -1, {})            end
@@ -23,31 +28,23 @@ local function buf_print (text)
     table.insert(lines, line)
   end
 
-  local last_line = vim.api.nvim_buf_line_count(buf) - 1
+  local last_line = vim.api.nvim_buf_line_count(state.output_buf) - 1
   set_lines(last_line, last_line, lines)
 end
 
 local function print_goals (goals)
   for _, g in ipairs(goals) do
     set_lines(g.id, g.id, { '?' .. g.id .. ' : ' .. g.type })
-    vim.api.nvim_win_set_cursor(win, { 1, 1 })
+    vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
   end
 end
 
-local function open_window ()
-  local code_win = vim.api.nvim_get_current_win()
-  win = utilities.find_or_create_win(buf)
-  vim.api.nvim_win_set_option(win, 'number', false)
-  vim.api.nvim_set_current_win(code_win)
-end
-
 local function set_height (height)
-  vim.api.nvim_win_set_height(win, height)
+  vim.api.nvim_win_set_height(state.output_win, height)
 end
 
 return {
-  buf         = buf,
-  win         = win,
+  initialize  = initialize,
   buf_option  = buf_option,
   set_lines   = set_lines,
   clear       = clear,
@@ -55,6 +52,5 @@ return {
   unlock      = unlock,
   buf_print   = buf_print,
   print_goals = print_goals,
-  open_window = open_window,
   set_height  = set_height,
 }
