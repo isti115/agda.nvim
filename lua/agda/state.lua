@@ -5,5 +5,5 @@ return {
   code_win    = nil,
   output_buf  = nil,
   output_win  = nil,
-  hl_ns       = nil
+  namespace   = nil
 }

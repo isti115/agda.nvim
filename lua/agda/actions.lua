@@ -10,7 +10,7 @@ local function load ()
 
   output.initialize()
 
-  vim.api.nvim_command('%s/?/{!  !}/ge') -- TODO silent instead of e?
+  vim.api.nvim_command('%s/?/{!   !}/ge') -- TODO silent instead of e?
   vim.api.nvim_command('noh') -- TODO find better solution
   vim.api.nvim_command('silent write')
   if not (connection.is_alive()) then connection.start() end
@@ -27,16 +27,15 @@ local function back ()
     return
   end
   local previous, _ = utilities.find_surrounding_goals()
-  -- vim.api.nvim_win_set_cursor(
-  --   code_win,
-  --   previous.range.start.line,
-  --   previous.range.start.col
-  -- ) -- doesn't count multi-byte...
-  vim.api.nvim_command(
-    'normal ' ..
-    previous.range.start.line .. 'G' ..
-    previous.range.start.col + 2 .. '|'
+  vim.api.nvim_win_set_cursor(
+    state.code_win,
+    { previous.location.from.top + 1, previous.location.from.left + 3 }
   )
+  -- vim.api.nvim_command(
+  --   'normal ' ..
+  --   previous.range.start.line .. 'G' ..
+  --   previous.range.start.col + 2 .. '|'
+  -- )
 end
 
 local function forward ()
@@ -45,11 +44,15 @@ local function forward ()
     return
   end
   local _, next = utilities.find_surrounding_goals()
-  vim.api.nvim_command(
-    'normal ' ..
-    next.range.start.line .. 'G' ..
-    next.range.start.col + 2 .. '|'
+  vim.api.nvim_win_set_cursor(
+    state.code_win,
+    { next.location.from.top + 1, next.location.from.left + 3 }
   )
+  -- vim.api.nvim_command(
+  --   'normal ' ..
+  --   next.range.start.line .. 'G' ..
+  --   next.range.start.col + 2 .. '|'
+  -- )
 end
 
 local function version ()

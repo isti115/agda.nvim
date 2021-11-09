@@ -11,16 +11,42 @@ local function handle (_, data)
   -- print(vim.inspect(message))
   if message.kind == 'DisplayInfo' then
     if message.info.kind == 'AllGoalsWarnings' then
+      utilities.update_pos_to_byte()
       output.clear()
       state.goals = {}
 
       output.set_height(#message.info.visibleGoals)
       for _, g in ipairs(message.info.visibleGoals) do
+        local from = utilities.pos_to_line_left(g.constraintObj.range[1].start.pos)
+        local to = utilities.pos_to_line_left(g.constraintObj.range[1]['end'].pos)
+        local fromId = vim.api.nvim_buf_set_extmark(
+          state.code_buf, state.namespace, from.line - 1, from.left, {}
+        )
+        local toId = vim.api.nvim_buf_set_extmark(
+          state.code_buf, state.namespace,
+          to.line - 1, to.left,
+          {
+            hl_group = 'agdakeyword', -- TODO this doesn't seem to work
+            virt_text_pos = 'overlay',
+            virt_text = {{'?' .. g.constraintObj.id}},
+            right_gravity = false,
+          }
+        )
         table.insert(state.goals, {
           id = g.constraintObj.id,
           type = g.type,
           range = g.constraintObj.range[1],
+          marks = {
+            from = fromId,
+            to = toId,
+          },
+          location = {
+            from = { top = from.line - 1, left = from.left },
+            to = { top = to.line - 1, left = to.left },
+          },
         })
+
+        utilities.update_goal_locations()
       end
 
       output.print_goals(state.goals)
@@ -74,13 +100,28 @@ local function handle (_, data)
 
   elseif message.kind == 'GiveAction' then
     utilities.update_pos_to_byte()
-    local range = message.interactionPoint.range[1]
-    local from = utilities.pos_to_line_left(range.start.pos)
-    local to = utilities.pos_to_line_left(range['end'].pos)
+    utilities.update_goal_locations()
+    local goal = state.goals[message.interactionPoint.id + 1]
+    -- local range = message.interactionPoint.range[1]
+    -- local from = utilities.pos_to_line_left(range.start.pos)
+    -- local to = utilities.pos_to_line_left(range['end'].pos)
+    local from = goal.location.from
+    local to = goal.location.to
 
-    vim.api.nvim_buf_set_text(state.code_buf,
-      from.line - 1, from.left, to.line - 1, to.left,
-      { message.giveResult.str })
+    vim.api.nvim_buf_set_text(
+      state.code_buf,
+      from.top, from.left, to.top, to.left,
+      { message.giveResult.str }
+    )
+
+    vim.api.nvim_buf_del_extmark(
+      state.code_buf, state.namespace,
+      state.goals[message.interactionPoint.id + 1].marks.from
+    )
+    vim.api.nvim_buf_del_extmark(
+      state.code_buf, state.namespace,
+      state.goals[message.interactionPoint.id + 1].marks.to
+    )
 
     return true -- the file needs to be reloaded
 
@@ -92,13 +133,13 @@ local function handle (_, data)
         local from = utilities.pos_to_line_left(hl.range[1])
         local to = utilities.pos_to_line_left(hl.range[2])
         vim.api.nvim_buf_add_highlight(
-          state.code_buf, state.hl_ns, 'agda' .. hl.atoms[1], from.line - 1, from.left, to.left
+          state.code_buf, state.namespace, 'agda' .. hl.atoms[1], from.line - 1, from.left, to.left
         )
       end
     end
 
   elseif message.kind == 'ClearHighlighting' then
-    vim.api.nvim_buf_clear_namespace(state.code_buf, state.hl_ns, 0, -1)
+    vim.api.nvim_buf_clear_namespace(state.code_buf, state.namespace, 0, -1)
 
   elseif message.kind == 'RunningInfo' then
     print(message.message)

@@ -42,6 +42,15 @@ end
 
 --[[ Position manipulation ]]--
 
+local function get_cursor_top_left (win)
+  local position = vim.api.nvim_win_get_cursor(win)
+
+  return {
+    top = position[1] - 1,
+    left = position[2],
+  }
+end
+
 local function get_cursor_line_col (win)
   local position = vim.api.nvim_win_get_cursor(win)
   local line, col = position[1], position[2] + 1
@@ -56,6 +65,10 @@ end
 
 local function is_before_line_col (a, b)
   return a.line < b.line or (a.line == b.line and a.col <= b.col)
+end
+
+local function is_before_top_left (a, b)
+  return a.top < b.top or (a.top == b.top and a.left <= b.left)
 end
 
 local function character_to_byte_map (content)
@@ -95,12 +108,33 @@ end
 
 --[[ Goal related ]]--
 
+local function update_goal_locations ()
+  for _, g in pairs(state.goals) do
+    local from = vim.api.nvim_buf_get_extmark_by_id(
+      state.code_buf, state.namespace, g.marks.from, {}
+    )
+    local to = vim.api.nvim_buf_get_extmark_by_id(
+      state.code_buf, state.namespace, g.marks.to, {}
+    )
+
+    g.location.from.top = from[1]
+    g.location.from.left = from[2]
+
+    g.location.to.top = to[1]
+    g.location.to.left = to[2]
+
+    -- print(vim.inspect(g.location))
+  end
+end
+
 local function find_current_goal ()
-  local line_col = get_cursor_line_col(state.code_win)
+  -- local line_col = get_cursor_line_col(state.code_win)
+  update_goal_locations()
+  local top_left = get_cursor_top_left(state.code_win)
 
   for _, g in pairs(state.goals) do
-    if  is_before_line_col(g.range.start, line_col)
-    and is_before_line_col(line_col, g.range['end'])
+    if  is_before_top_left(g.location.from, top_left)
+    and is_before_top_left(top_left, g.location.to)
     then
        return g.id
     end
@@ -108,7 +142,9 @@ local function find_current_goal ()
 end
 
 local function find_surrounding_goals ()
-  local line_col = get_cursor_line_col(state.code_win)
+  -- local line_col = get_cursor_line_col(state.code_win)
+  update_goal_locations()
+  local top_left = get_cursor_top_left(state.code_win)
 
   if #state.goals == 0 then
     print('There are no goals in the currently loaded buffer.')
@@ -119,9 +155,9 @@ local function find_surrounding_goals ()
   local next = state.goals[1]
 
   for _, g in ipairs(state.goals) do
-    if is_before_line_col(g.range['end'], line_col) then
+    if is_before_top_left(g.location.to, top_left) then
       previous = g
-    elseif is_before_line_col(line_col, g.range.start) then
+    elseif is_before_top_left(top_left, g.location.from) then
       next = g
       return previous, next
     end
@@ -136,13 +172,16 @@ return {
   find_or_create_win     = find_or_create_win     ,
   current_file           = current_file           ,
 
+  get_cursor_top_left    = get_cursor_top_left    ,
   get_cursor_line_col    = get_cursor_line_col    ,
+  is_before_top_left     = is_before_top_left     ,
   is_before_line_col     = is_before_line_col     ,
   character_to_byte_map  = character_to_byte_map  ,
   update_pos_to_byte     = update_pos_to_byte     ,
   byte_to_line_left      = byte_to_line_left      ,
   pos_to_line_left       = pos_to_line_left       ,
 
+  update_goal_locations  = update_goal_locations  ,
   find_surrounding_goals = find_surrounding_goals ,
   find_current_goal      = find_current_goal      ,
 }

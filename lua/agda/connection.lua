@@ -11,7 +11,8 @@ local function send     (message) job:send(message .. '\n')  end
 local function receive (error, data)
   local reload = response.handle(error, data)
   if reload then
-    print('please reload the file!')
+    require('agda').load()
+    -- print('please reload the file!')
   end
 end
 
