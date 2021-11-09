@@ -54,11 +54,18 @@ local function handle (_, data)
     elseif message.info.kind == 'GoalSpecific' then
       output.clear()
 
+      local height = 0
+
       output.buf_print('Goal: ' .. message.info.goalInfo.type)
-      if (#message.info.goalInfo.entries == 0) then
-        output.set_height(1)
-      else
-        output.set_height(#message.info.goalInfo.entries + 3)
+      height = height + 1
+
+      if message.info.goalInfo.typeAux.kind == "GoalAndHave" then
+        output.buf_print('Have: ' .. message.info.goalInfo.typeAux.expr)
+        height = height + 1
+      end
+
+      if #message.info.goalInfo.entries > 0 then
+        height = height + 2 + #message.info.goalInfo.entries
         output.buf_print('-----')
         output.buf_print('Context:')
 
@@ -66,6 +73,8 @@ local function handle (_, data)
           output.buf_print('  ' .. e.reifiedName .. ' : ' .. e.binding)
         end
       end
+
+      output.set_height(height)
       vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
 
     elseif message.info.kind == 'Context' then
@@ -114,14 +123,14 @@ local function handle (_, data)
       { message.giveResult.str }
     )
 
-    vim.api.nvim_buf_del_extmark(
-      state.code_buf, state.namespace,
-      state.goals[message.interactionPoint.id + 1].marks.from
-    )
-    vim.api.nvim_buf_del_extmark(
-      state.code_buf, state.namespace,
-      state.goals[message.interactionPoint.id + 1].marks.to
-    )
+    -- vim.api.nvim_buf_del_extmark(
+    --   state.code_buf, state.namespace,
+    --   state.goals[message.interactionPoint.id + 1].marks.from
+    -- )
+    -- vim.api.nvim_buf_del_extmark(
+    --   state.code_buf, state.namespace,
+    --   state.goals[message.interactionPoint.id + 1].marks.to
+    -- )
 
     return true -- the file needs to be reloaded
 

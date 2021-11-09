@@ -22,6 +22,10 @@ local function load ()
 end
 
 local function back ()
+  if not state.goals then
+    print('Please load the file first!')
+    return
+  end
   if #state.goals == 0 then
     print('There are no goals in the currently loaded buffer.')
     return
@@ -39,6 +43,10 @@ local function back ()
 end
 
 local function forward ()
+  if not state.goals then
+    print('Please load the file first!')
+    return
+  end
   if #state.goals == 0 then
     print('There are no goals in the currently loaded buffer.')
     return
@@ -103,6 +111,21 @@ local function refine ()
   ))
 end
 
+local function goal_type_context_infer ()
+  local goal = utilities.find_current_goal()
+  if not goal then
+    print 'Place the cursor in a goal to get the context!'
+    return
+  end
+
+  local content = utilities.get_goal_content(goal)
+
+  connection.send(commands.make(
+    utilities.current_file(),
+    commands.goal_type_context_infer(goal, content)
+  ))
+end
+
 local function goal_type_context ()
   local goal = utilities.find_current_goal()
   if not goal then
@@ -129,14 +152,31 @@ local function context ()
   ))
 end
 
+local function give ()
+  local goal = utilities.find_current_goal()
+  if not goal then
+    print 'Place the cursor in a goal to get the context!'
+    return
+  end
+
+  local content = utilities.get_goal_content(goal)
+
+  connection.send(commands.make(
+    utilities.current_file(),
+    commands.give(goal, content)
+  ))
+end
+
 return {
-  auto              = auto,
-  back              = back,
-  case              = case,
-  goal_type_context = goal_type_context,
-  context           = context,
-  forward           = forward,
-  load              = load,
-  refine            = refine,
-  version           = version,
+  auto                    = auto,
+  back                    = back,
+  case                    = case,
+  goal_type_context_infer = goal_type_context_infer,
+  goal_type_context       = goal_type_context,
+  context                 = context,
+  give                    = give,
+  forward                 = forward,
+  load                    = load,
+  refine                  = refine,
+  version                 = version,
 }

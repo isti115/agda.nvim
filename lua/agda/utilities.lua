@@ -141,6 +141,25 @@ local function find_current_goal ()
   end
 end
 
+local function get_goal_content (goalId)
+  local goal = state.goals[goalId + 1]
+
+  local text = vim.api.nvim_buf_get_lines(
+    state.code_buf,
+    goal.location.from.top,
+    goal.location.to.top + 1,
+    false
+  )
+
+  local content = string.sub(
+    text[1],
+    goal.location.from.left + 3,
+    goal.location.to.left - 2
+  )
+
+  return content
+end
+
 local function find_surrounding_goals ()
   -- local line_col = get_cursor_line_col(state.code_win)
   update_goal_locations()
@@ -184,4 +203,5 @@ return {
   update_goal_locations  = update_goal_locations  ,
   find_surrounding_goals = find_surrounding_goals ,
   find_current_goal      = find_current_goal      ,
+  get_goal_content       = get_goal_content       ,
 }
