@@ -25,11 +25,27 @@ local function handle (_, data)
 
       output.print_goals(state.goals)
 
-    elseif message.info.kind == 'Context' then
-      -- print(vim.inspect(message))
+    elseif message.info.kind == 'GoalSpecific' then
       output.clear()
 
+      output.buf_print('Goal: ' .. message.info.goalInfo.type)
+      if (#message.info.goalInfo.entries == 0) then
+        output.set_height(1)
+      else
+        output.set_height(#message.info.goalInfo.entries + 3)
+        output.buf_print('-----')
+        output.buf_print('Context:')
+
+        for _, e in ipairs(message.info.goalInfo.entries) do
+          output.buf_print('  ' .. e.reifiedName .. ' : ' .. e.binding)
+        end
+      end
+      vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
+
+    elseif message.info.kind == 'Context' then
+      output.clear()
       output.set_height(#message.info.context)
+
       for _, c in ipairs(message.info.context) do
         -- set_lines(i - 1, i - 1, { c.reifiedName .. ' : ' .. c.binding })
         output.buf_print(c.reifiedName .. ' : ' .. c.binding)

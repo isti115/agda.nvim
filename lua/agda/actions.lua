@@ -100,6 +100,19 @@ local function refine ()
   ))
 end
 
+local function goal_type_context ()
+  local goal = utilities.find_current_goal()
+  if not goal then
+    print 'Place the cursor in a goal to get the context!'
+    return
+  end
+
+  connection.send(commands.make(
+    utilities.current_file(),
+    commands.goal_type_context(goal)
+  ))
+end
+
 local function context ()
   local goal = utilities.find_current_goal()
   if not goal then
@@ -114,12 +127,13 @@ local function context ()
 end
 
 return {
-  auto    = auto,
-  back    = back,
-  case    = case,
-  context = context,
-  forward = forward,
-  load    = load,
-  refine  = refine,
-  version = version,
+  auto              = auto,
+  back              = back,
+  case              = case,
+  goal_type_context = goal_type_context,
+  context           = context,
+  forward           = forward,
+  load              = load,
+  refine            = refine,
+  version           = version,
 }

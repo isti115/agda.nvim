@@ -22,16 +22,21 @@ local function case (goal, expression)
   return 'Cmd_make_case ' .. goal .. ' noRange "' .. expression .. '"'
 end
 
+local function goal_type_context (goal)
+  return 'Cmd_goal_type_context Simplified ' .. goal .. ' noRange ""'
+end
+
 local function context (goal)
   return 'Cmd_context Simplified ' .. goal .. ' noRange ""'
 end
 
 return ({
-  auto    = auto,
-  case    = case,
-  context = context,
-  load    = load,
-  make    = make,
-  refine  = refine,
-  version = version,
+  auto              = auto,
+  case              = case,
+  goal_type_context = goal_type_context,
+  context           = context,
+  load              = load,
+  make              = make,
+  refine            = refine,
+  version           = version,
 })
