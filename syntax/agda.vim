@@ -1,4 +1,11 @@
-" Transformed from the highlighting file of agda-mode-vscode:
+if exists('b:current_syntax')
+  finish
+endif
+
+syntax keyword agdakeyword abstract as coinductive constructor data field hiding import inductive infix infixl infixr instance module mutual open pattern primitive private public record renaming rewrite syntax using variable where with
+syntax match agdacomment "--.*$"
+
+" Color schemes transformed from the highlighting file of agda-mode-vscode:
 " https://github.com/banacorn/agda-mode-vscode/blob/344782ab97f23422e57d05194d59e89f5b3381c7/src/Highlighting/Highlighting__AgdaAspect.res
 
 let theme = "dark"

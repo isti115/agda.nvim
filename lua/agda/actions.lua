@@ -9,8 +9,9 @@ local function load ()
   state.code_win = vim.api.nvim_get_current_win()
 
   output.initialize()
+  state.goals = {}
 
-  vim.api.nvim_command('%s/?/{!   !}/ge') -- TODO silent instead of e?
+  vim.api.nvim_command(':%s/\\(^\\|\\s\\)\\zs?\\ze\\(\\s\\|$\\)/{!   !}/ge') -- TODO silent instead of e?
   vim.api.nvim_command('noh') -- TODO find better solution
   vim.api.nvim_command('silent write')
   if not (connection.is_alive()) then connection.start() end
