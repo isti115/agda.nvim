@@ -8,9 +8,11 @@ syntax match agdacomment "--.*$"
 " Color schemes transformed from the highlighting file of agda-mode-vscode:
 " https://github.com/banacorn/agda-mode-vscode/blob/344782ab97f23422e57d05194d59e89f5b3381c7/src/Highlighting/Highlighting__AgdaAspect.res
 
-let theme = "dark"
+if !exists('g:agda_theme')
+  let g:agda_theme = "dark"
+endif
 
-if theme == "dark"
+if g:agda_theme == "dark"
   hi agdacomment                guifg=#505050
   hi agdakeyword                guifg=#ff9932
   hi agdastring                 guifg=#dd4d4d
@@ -48,7 +50,7 @@ if theme == "dark"
   " hi agdaoperator
 endif
 
-if theme == "light"
+if g:agda_theme == "light"
   hi agdacomment                guifg=#b0b0b0
   hi agdakeyword                guifg=#cd6600
   hi agdastring                 guifg=#b22222

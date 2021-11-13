@@ -17,19 +17,18 @@ NeoVim plugin for interacting with Agda written in Lua
 ```
 
 ## Usage
-The following default mappings are added:
-```
-nnoremap <silent> <C-c><C-l> :lua require('agda').load()<Return>
-nnoremap <silent> <C-c><C-,> :lua require('agda').goal_type_context()<Return>
-nnoremap <silent> <C-c><C-.> :lua require('agda').goal_type_context_infer()<Return>
-nnoremap <silent> <C-c><C-Space> :lua require('agda').give()<Return>
-nnoremap <silent> <C-c><C-c> :lua require('agda').case()<Return>
-nnoremap <silent> <C-c><C-r> :lua require('agda').refine()<Return>
-nnoremap <silent> <C-c><C-a> :lua require('agda').auto()<Return>
-nnoremap <silent> <C-c><C-f> :lua require('agda').forward()<Return>
-nnoremap <silent> <C-c><C-b> :lua require('agda').back()<Return>
-nnoremap <silent> <C-c><C-v> :lua require('agda').version()<Return>
-```
+By default the usual agda actions are mapped to the conventional keys, preceded by `<LocalLeader>` (`\` by default in NeoVim), such as:
+- `\l` - Load
+- `\f` - Next goal _(Forward)_
+- `\c` - Case split
+
+and so on. See [the source](https://github.com/Isti115/agda.nvim/blob/main/ftplugin/agda.vim) for all available actions!
+
+### Options
+| Option        | Possible Values (Defaults in **bold**) |
+|---------------|----------------------------------------|
+| g:agda_theme  | **dark**, light                        |
+| g:agda_keymap | **vim**, emacs, none                   |
 
 ## Features
 
