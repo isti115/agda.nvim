@@ -5,6 +5,8 @@
 # agda.nvim
 NeoVim plugin for interacting with Agda written in Lua
 
+_(Note: Sorry for the lack of updates lately, currently I'm waiting for the following issue: https://github.com/agda/agda/issues/5665 to be addressed, but in the meantime I might switch to the Lisp backend, which could be a bit painful in terms of parsing, but at least would enable the further development of this plugin.)_
+
 ## Dependencies
 - [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
 
