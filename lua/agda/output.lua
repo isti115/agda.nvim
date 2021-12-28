@@ -33,8 +33,16 @@ end
 
 local function print_goals (goals)
   for _, g in ipairs(goals) do
-    set_lines(g.id, g.id, { '?' .. g.id .. ' : ' .. g.type })
-    vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
+    -- set_lines(g.id, g.id, { '?' .. g.id .. ' : ' .. g.type })
+    buf_print('?' .. g.id .. ' : ' .. utilities.remove_qualifications(g.type))
+  end
+end
+
+local function print_context (context)
+  for _, c in ipairs(context) do
+    buf_print(
+      c.reifiedName .. ' : ' .. utilities.remove_qualifications(c.binding)
+    )
   end
 end
 
@@ -43,18 +51,24 @@ local function set_height (height)
 end
 
 local function fit_height ()
-  set_height(vim.api.nvim_buf_line_count(state.output_buf))
+  set_height(vim.api.nvim_buf_line_count(state.output_buf) - 1)
+end
+
+local function reset_cursor ()
+  vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
 end
 
 return {
-  initialize  = initialize,
-  buf_option  = buf_option,
-  set_lines   = set_lines,
-  clear       = clear,
-  lock        = lock,
-  unlock      = unlock,
-  buf_print   = buf_print,
-  print_goals = print_goals,
-  set_height  = set_height,
-  fit_height  = fit_height,
+  initialize    = initialize,
+  buf_option    = buf_option,
+  set_lines     = set_lines,
+  clear         = clear,
+  lock          = lock,
+  unlock        = unlock,
+  buf_print     = buf_print,
+  print_goals   = print_goals,
+  print_context = print_context,
+  set_height    = set_height,
+  fit_height    = fit_height,
+  reset_cursor  = reset_cursor,
 }

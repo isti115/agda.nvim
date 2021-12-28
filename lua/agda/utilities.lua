@@ -186,6 +186,14 @@ local function find_surrounding_goals ()
 end
 
 
+--[[ Text manipulation ]]--
+
+local function remove_qualifications (input)
+  local oneLine = string.gsub(string.gsub(input, '\n', ' '), ' +', ' ')
+  local unqualified = string.gsub(oneLine, '[^ ()]-%.', '')
+  return unqualified
+end
+
 return {
   find_or_create_buf     = find_or_create_buf     ,
   find_or_create_win     = find_or_create_win     ,
@@ -204,4 +212,6 @@ return {
   find_surrounding_goals = find_surrounding_goals ,
   find_current_goal      = find_current_goal      ,
   get_goal_content       = get_goal_content       ,
+
+  remove_qualifications  = remove_qualifications  ,
 }

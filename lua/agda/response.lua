@@ -15,7 +15,7 @@ local function handle (_, data)
       output.clear()
       state.goals = {}
 
-      output.set_height(#message.info.visibleGoals)
+      -- output.set_height(#message.info.visibleGoals)
       for _, g in ipairs(message.info.visibleGoals) do
         local from = utilities.pos_to_line_left(g.constraintObj.range[1].start.pos)
         local to = utilities.pos_to_line_left(g.constraintObj.range[1]['end'].pos)
@@ -50,42 +50,50 @@ local function handle (_, data)
       end
 
       output.print_goals(state.goals)
+      output.fit_height()
+      output.reset_cursor()
+
 
     elseif message.info.kind == 'GoalSpecific' then
       output.clear()
 
-      local height = 0
+      -- local height = 0
 
-      output.buf_print('Goal: ' .. message.info.goalInfo.type)
-      height = height + 1
+      output.buf_print(
+        'Goal: ' .. utilities.remove_qualifications(
+          message.info.goalInfo.type
+        )
+      )
+      -- height = height + 1
 
       if message.info.goalInfo.typeAux.kind == "GoalAndHave" then
-        output.buf_print('Have: ' .. message.info.goalInfo.typeAux.expr)
-        height = height + 1
+        output.buf_print(
+          'Have: ' .. utilities.remove_qualifications(
+            message.info.goalInfo.typeAux.expr
+          )
+        )
+        -- height = height + 1
       end
 
       if #message.info.goalInfo.entries > 0 then
-        height = height + 2 + #message.info.goalInfo.entries
+        -- height = height + 2 + #message.info.goalInfo.entries
         output.buf_print('-----')
         output.buf_print('Context:')
 
-        for _, e in ipairs(message.info.goalInfo.entries) do
-          output.buf_print('  ' .. e.reifiedName .. ' : ' .. e.binding)
-        end
+        output.print_context(message.info.goalInfo.entries)
       end
 
-      output.set_height(height)
-      vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
+      -- output.set_height(height)
+      output.fit_height()
+      output.reset_cursor()
       -- output.buf_print(vim.inspect(message))
 
     elseif message.info.kind == 'Context' then
       output.clear()
-      output.set_height(#message.info.context)
-
-      for _, c in ipairs(message.info.context) do
-        -- set_lines(i - 1, i - 1, { c.reifiedName .. ' : ' .. c.binding })
-        output.buf_print(c.reifiedName .. ' : ' .. c.binding)
-      end
+      -- output.set_height(#message.info.context)
+      output.print_context(message.info.context)
+      output.fit_height()
+      output.reset_cursor()
 
     elseif message.info.kind == 'Version' then
       output.set_lines(0, -1, { 'Agda version:', message.info.version })
@@ -95,8 +103,9 @@ local function handle (_, data)
       -- print('Error: ' .. message.info.error.message)
       output.clear()
       local lines = output.buf_print(message.info.error.message)
-      output.set_height(lines)
-      vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
+      -- output.set_height(lines)
+      output.fit_height()
+      output.reset_cursor()
 
     end
 
@@ -118,16 +127,10 @@ local function handle (_, data)
     local from = goal.location.from
     local to = goal.location.to
 
-    local function clean (input)
-      local oneLine = string.gsub(string.gsub(input, '\n', ' '), ' +', ' ')
-      local unqualified = string.gsub(oneLine, '[^ ()]-%.', '')
-      return unqualified
-    end
-
     vim.api.nvim_buf_set_text(
       state.code_buf,
       from.top, from.left, to.top, to.left,
-      { clean(message.giveResult.str) }
+      { utilities.remove_qualifications(message.giveResult.str) }
     )
 
     -- vim.api.nvim_buf_del_extmark(
