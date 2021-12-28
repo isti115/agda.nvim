@@ -42,6 +42,10 @@ local function set_height (height)
   vim.api.nvim_win_set_height(state.output_win, height)
 end
 
+local function fit_height ()
+  set_height(vim.api.nvim_buf_line_count(state.output_buf))
+end
+
 return {
   initialize  = initialize,
   buf_option  = buf_option,
@@ -52,4 +56,5 @@ return {
   buf_print   = buf_print,
   print_goals = print_goals,
   set_height  = set_height,
+  fit_height  = fit_height,
 }

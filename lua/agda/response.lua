@@ -76,6 +76,7 @@ local function handle (_, data)
 
       output.set_height(height)
       vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
+      -- output.buf_print(vim.inspect(message))
 
     elseif message.info.kind == 'Context' then
       output.clear()
@@ -117,10 +118,16 @@ local function handle (_, data)
     local from = goal.location.from
     local to = goal.location.to
 
+    local function clean (input)
+      local oneLine = string.gsub(string.gsub(input, '\n', ' '), ' +', ' ')
+      local unqualified = string.gsub(oneLine, '[^ ()]-%.', '')
+      return unqualified
+    end
+
     vim.api.nvim_buf_set_text(
       state.code_buf,
       from.top, from.left, to.top, to.left,
-      { message.giveResult.str }
+      { clean(message.giveResult.str) }
     )
 
     -- vim.api.nvim_buf_del_extmark(
@@ -150,8 +157,13 @@ local function handle (_, data)
   elseif message.kind == 'ClearHighlighting' then
     vim.api.nvim_buf_clear_namespace(state.code_buf, state.namespace, 0, -1)
 
+  elseif message.kind == 'ClearRunningInfo' then
+    output.clear()
+
   elseif message.kind == 'RunningInfo' then
-    print(message.message)
+    -- print(message.message)
+    output.buf_print(message.message)
+    output.fit_height()
 
   -- else
   --   print(vim.inspect(message))
