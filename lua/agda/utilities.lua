@@ -189,6 +189,7 @@ end
 --[[ Text manipulation ]]--
 
 local function remove_qualifications (input)
+  -- TODO: Handle linebreaks properly with indentation:
   local oneLine = string.gsub(string.gsub(input, '\n', ' '), ' +', ' ')
   local unqualified = string.gsub(oneLine, '[^ ()]-%.', '')
   return unqualified

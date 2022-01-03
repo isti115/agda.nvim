@@ -15,10 +15,10 @@ local function handle (_, data)
       output.clear()
       state.goals = {}
 
-      -- output.set_height(#message.info.visibleGoals)
       for _, g in ipairs(message.info.visibleGoals) do
-        local from = utilities.pos_to_line_left(g.constraintObj.range[1].start.pos)
-        local to = utilities.pos_to_line_left(g.constraintObj.range[1]['end'].pos)
+        local range = g.constraintObj.range[1]
+        local from = utilities.pos_to_line_left(range.start.pos)
+        local to = utilities.pos_to_line_left(range['end'].pos)
         local fromId = vim.api.nvim_buf_set_extmark(
           state.code_buf, state.namespace, from.line - 1, from.left, {}
         )
@@ -42,7 +42,7 @@ local function handle (_, data)
           },
           location = {
             from = { top = from.line - 1, left = from.left },
-            to = { top = to.line - 1, left = to.left },
+            to   = { top = to.line - 1,   left = to.left   },
           },
         })
 
@@ -57,14 +57,12 @@ local function handle (_, data)
     elseif message.info.kind == 'GoalSpecific' then
       output.clear()
 
-      -- local height = 0
 
       output.buf_print(
         'Goal: ' .. utilities.remove_qualifications(
           message.info.goalInfo.type
         )
       )
-      -- height = height + 1
 
       if message.info.goalInfo.typeAux.kind == "GoalAndHave" then
         output.buf_print(
@@ -72,58 +70,54 @@ local function handle (_, data)
             message.info.goalInfo.typeAux.expr
           )
         )
-        -- height = height + 1
       end
 
       if #message.info.goalInfo.entries > 0 then
-        -- height = height + 2 + #message.info.goalInfo.entries
         output.buf_print('-----')
         output.buf_print('Context:')
 
         output.print_context(message.info.goalInfo.entries)
       end
 
-      -- output.set_height(height)
       output.fit_height()
       output.reset_cursor()
-      -- output.buf_print(vim.inspect(message))
 
     elseif message.info.kind == 'Context' then
       output.clear()
-      -- output.set_height(#message.info.context)
       output.print_context(message.info.context)
       output.fit_height()
       output.reset_cursor()
 
     elseif message.info.kind == 'Version' then
       output.set_lines(0, -1, { 'Agda version:', message.info.version })
-      output.set_height(2)
+      output.fit_height()
 
     elseif message.info.kind == 'Error' then
       -- print('Error: ' .. message.info.error.message)
       output.clear()
-      local lines = output.buf_print(message.info.error.message)
-      -- output.set_height(lines)
+      output.buf_print(message.info.error.message)
       output.fit_height()
       output.reset_cursor()
 
     end
 
   elseif message.kind == 'MakeCase' then
-    vim.api.nvim_buf_set_lines(state.code_buf,
+    vim.api.nvim_buf_set_lines(
+      state.code_buf,
       message.interactionPoint.range[1].start.line - 1,
       message.interactionPoint.range[1]['end'].line,
-      false, message.clauses)
+      false, message.clauses
+    )
 
-    return true -- the file needs to be reloaded
+    require('agda').load()
 
   elseif message.kind == 'GiveAction' then
     utilities.update_pos_to_byte()
     utilities.update_goal_locations()
-    local goal = state.goals[message.interactionPoint.id + 1]
     -- local range = message.interactionPoint.range[1]
     -- local from = utilities.pos_to_line_left(range.start.pos)
     -- local to = utilities.pos_to_line_left(range['end'].pos)
+    local goal = state.goals[message.interactionPoint.id + 1]
     local from = goal.location.from
     local to = goal.location.to
 
@@ -142,7 +136,7 @@ local function handle (_, data)
     --   state.goals[message.interactionPoint.id + 1].marks.to
     -- )
 
-    return true -- the file needs to be reloaded
+    require('agda').load()
 
   elseif message.kind == 'HighlightingInfo' then
     utilities.update_pos_to_byte()
@@ -152,7 +146,8 @@ local function handle (_, data)
         local from = utilities.pos_to_line_left(hl.range[1])
         local to = utilities.pos_to_line_left(hl.range[2])
         vim.api.nvim_buf_add_highlight(
-          state.code_buf, state.namespace, 'agda' .. hl.atoms[1], from.line - 1, from.left, to.left
+          state.code_buf, state.namespace,
+          'agda' .. hl.atoms[1], from.line - 1, from.left, to.left
         )
       end
     end
@@ -164,7 +159,6 @@ local function handle (_, data)
     output.clear()
 
   elseif message.kind == 'RunningInfo' then
-    -- print(message.message)
     output.buf_print(message.message)
     output.fit_height()
 

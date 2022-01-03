@@ -28,7 +28,6 @@ local function buf_print (text)
 
   local last_line = vim.api.nvim_buf_line_count(state.output_buf) - 1
   set_lines(last_line, last_line, lines)
-  return #lines
 end
 
 local function print_goals (goals)
@@ -58,17 +57,25 @@ local function reset_cursor ()
   vim.api.nvim_win_set_cursor(state.output_win, { 1, 1 })
 end
 
+local function overwrite (content)
+  clear()
+  buf_print(content)
+  fit_height()
+  reset_cursor()
+end
+
 return {
-  initialize    = initialize,
   buf_option    = buf_option,
-  set_lines     = set_lines,
-  clear         = clear,
-  lock          = lock,
-  unlock        = unlock,
   buf_print     = buf_print,
-  print_goals   = print_goals,
-  print_context = print_context,
-  set_height    = set_height,
+  clear         = clear,
   fit_height    = fit_height,
+  initialize    = initialize,
+  lock          = lock,
+  overwrite     = overwrite,
+  print_context = print_context,
+  print_goals   = print_goals,
   reset_cursor  = reset_cursor,
+  set_height    = set_height,
+  set_lines     = set_lines,
+  unlock        = unlock,
 }

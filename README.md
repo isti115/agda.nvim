@@ -53,6 +53,15 @@ and so on. See [the source](https://github.com/Isti115/agda.nvim/blob/main/ftplu
 ### Planned
 - Inline case split
 
+Note: Unicode input is not yet implemented, use [digraphs](https://vimhelp.org/digraph.txt.html)!
+Some examples for special characters that you can enter by default:
+- ∀ = `^KFA` ("For All")
+- ∃ = `^KTE` ("There Exists")
+- → = `^K->`
+- λ = `^Kl*`
+- ≡ = `^K=3`
+- ¬ = `^KNO`
+
 ## Thanks to
 - [u/algebrartist](https://www.reddit.com/r/agda/comments/qamibt/comment/hhm6jke) for help with the development on reddit and testing
 - [banacorn](https://github.com/banacorn/agda-mode-vscode) for agda-mode-vscode and the description of the communication protocol
