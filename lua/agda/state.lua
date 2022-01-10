@@ -1,9 +1,15 @@
 return {
-  goals       = nil,
-  pos_to_byte = nil,
-  code_buf    = nil,
-  code_win    = nil,
-  output_buf  = nil,
-  output_win  = nil,
-  namespace   = nil
+  byte_to_pos         = nil ,
+  code_buf            = nil ,
+  code_win            = nil ,
+  extmark_namespace   = nil ,
+  goals               = nil ,
+  highlight_namespace = nil ,
+  offsets             = nil ,
+  originalGoalSizes   = nil ,
+  output_buf          = nil ,
+  output_win          = nil ,
+  pending             = nil ,
+  pos_to_byte         = nil ,
+  status              = nil ,
 }

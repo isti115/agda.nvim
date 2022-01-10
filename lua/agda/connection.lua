@@ -1,12 +1,16 @@
-local Job      = require('plenary.job')
-local response = require('agda.response')
+local Job       = require('plenary.job')
+local response  = require('agda.response')
+local utilities = require('agda.utilities')
 
 local job
 
 local function start    ()        job:start()                end
 local function stop     ()        job:shutdown()             end
 local function is_alive ()        return not (not job.stdin) end
-local function send     (message) job:send(message .. '\n')  end
+local function send     (message)
+  utilities.log(message, 'message')
+  job:send(message .. '\n')
+end
 
 job = Job:new {
   command = 'agda',
@@ -15,8 +19,8 @@ job = Job:new {
 }
 
 return {
-  is_alive = is_alive,
-  send     = send    ,
-  start    = start   ,
-  stop     = stop    ,
+  is_alive = is_alive ,
+  send     = send     ,
+  start    = start    ,
+  stop     = stop     ,
 }
