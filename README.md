@@ -8,7 +8,9 @@ NeoVim plugin for interacting with Agda written in Lua
 _(Note: Sorry for the lack of updates lately, currently I'm waiting for the following issue: https://github.com/agda/agda/issues/5665 to be addressed, but in the meantime I might switch to the Lisp backend, which could be a bit painful in terms of parsing, but at least would enable the further development of this plugin.)_
 
 ## Dependencies
+- [neovim](https://github.com/neovim/neovim/) (≥ 0.5.0)
 - [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
+- [agda](https://github.com/agda/agda) (≥ 2.6.2)
 
 ## Installation
 
@@ -38,12 +40,14 @@ and so on. See [the source](https://github.com/Isti115/agda.nvim/blob/main/ftplu
 - Goal types
 - Version info
 - Case splitting
-- Context
+- Context information
 - Syntax highlighting
 - Refinement
 - Auto
 - Infer type of goal contents
 - Jumping between goals
+- Expression normalization and type inference
+- Give contents to goals
 
 \*: (more like _is sort of working_, but everything is still experimental...)
 
@@ -52,6 +56,7 @@ and so on. See [the source](https://github.com/Isti115/agda.nvim/blob/main/ftplu
 
 ### Planned
 - Inline case split
+- Go to definition
 
 Note: Unicode input is not yet implemented, use [digraphs](https://vimhelp.org/digraph.txt.html)!
 Some examples for special characters that you can enter by default:
