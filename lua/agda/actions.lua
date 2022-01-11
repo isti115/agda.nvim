@@ -28,14 +28,9 @@ local function load ()
 end
 
 local function back ()
-  if state.status ~= enums.Status.READY then
-    print('Please load the file first!')
-    return
-  end
-  if #state.goals == 0 then
-    print('There are no goals in the currently loaded buffer.')
-    return
-  end
+  if not utilities.ensure_loaded() then return end
+  if not utilities.ensure_goals() then return end
+
   local previous, _ = utilities.find_surrounding_goals()
   vim.api.nvim_win_set_cursor(
     state.code_win,
@@ -49,14 +44,8 @@ local function back ()
 end
 
 local function forward ()
-  if state.status ~= enums.Status.READY then
-    print('Please load the file first!')
-    return
-  end
-  if #state.goals == 0 then
-    print('There are no goals in the currently loaded buffer.')
-    return
-  end
+  if not utilities.ensure_loaded() then return end
+  if not utilities.ensure_goals() then return end
 
   local _, next = utilities.find_surrounding_goals()
   vim.api.nvim_win_set_cursor(
@@ -84,7 +73,7 @@ local function case ()
     return
   end
 
-  local expression = vim.fn.input('case: ')
+  local expression = utilities.get_goal_content_or_prompt(goal, 'case: ')
 
   connection.send(commands.make(
     utilities.current_file(),
@@ -125,7 +114,7 @@ local function goal_type_context_infer ()
     return
   end
 
-  local content = utilities.get_goal_content(goal)
+  local content = utilities.get_goal_content_or_prompt(goal, 'have: ')
 
   connection.send(commands.make(
     utilities.current_file(),
@@ -166,8 +155,7 @@ local function give ()
     return
   end
 
-  -- local content = utilities.trim(utilities.get_goal_content(goal)) -- TODO
-  local content = utilities.get_goal_content(goal)
+  local content = utilities.get_goal_content_or_prompt(goal, 'give: ')
   local interval = utilities.get_goal_interval(goal)
 
   connection.send(commands.make(
@@ -181,6 +169,42 @@ local function give ()
       )
     )
   ))
+end
+
+local function compute ()
+  local goal = utilities.find_current_goal()
+
+  if not goal then
+    local expression = vim.fn.input('compute: ')
+    connection.send(commands.make(
+      utilities.current_file(),
+      commands.compute_toplevel(enums.ComputeMode.DEFAULT_COMPUTE, expression)
+    ))
+  else
+    local expression = utilities.get_goal_content_or_prompt(goal, 'compute: ')
+    connection.send(commands.make(
+      utilities.current_file(),
+      commands.compute(enums.ComputeMode.DEFAULT_COMPUTE, goal.id, expression)
+    ))
+  end
+end
+
+local function infer ()
+  local goal = utilities.find_current_goal()
+
+  if not goal then
+    local expression = vim.fn.input('infer: ')
+    connection.send(commands.make(
+      utilities.current_file(),
+      commands.infer_toplevel(enums.Rewrite.SIMPLIFIED, expression)
+    ))
+  else
+    local expression = utilities.get_goal_content_or_prompt(goal, 'infer: ')
+    connection.send(commands.make(
+      utilities.current_file(),
+      commands.infer(enums.Rewrite.SIMPLIFIED, goal.id, expression)
+    ))
+  end
 end
 
 local function clear ()
@@ -198,16 +222,18 @@ local function clear ()
 end
 
 return {
-  auto                    = auto                    ,
-  back                    = back                    ,
-  case                    = case                    ,
-  clear                   = clear                   ,
-  goal_type_context_infer = goal_type_context_infer ,
-  goal_type_context       = goal_type_context       ,
-  context                 = context                 ,
-  give                    = give                    ,
-  forward                 = forward                 ,
-  load                    = load                    ,
-  refine                  = refine                  ,
-  version                 = version                 ,
+  auto                    = auto                     ,
+  back                    = back                     ,
+  case                    = case                     ,
+  clear                   = clear                    ,
+  compute                 = compute                  ,
+  context                 = context                  ,
+  forward                 = forward                  ,
+  give                    = give                     ,
+  goal_type_context       = goal_type_context        ,
+  goal_type_context_infer = goal_type_context_infer  ,
+  infer                   = infer                    ,
+  load                    = load                     ,
+  refine                  = refine                   ,
+  version                 = version                  ,
 }

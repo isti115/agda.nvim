@@ -4,6 +4,7 @@ endif
 
 syntax keyword agdakeyword abstract as coinductive constructor data field hiding import inductive infix infixl infixr instance module mutual open pattern primitive private public record renaming rewrite syntax using variable where with
 syntax match agdacomment "--.*$"
+syntax match agdasymbol ":\|→\|="
 
 " Color schemes transformed from the highlighting file of agda-mode-vscode:
 " https://github.com/banacorn/agda-mode-vscode/blob/344782ab97f23422e57d05194d59e89f5b3381c7/src/Highlighting/Highlighting__AgdaAspect.res
@@ -48,6 +49,8 @@ if g:agda_theme == "dark"
   " hi agdaargument
   hi agdamacro                  guifg=#73baa2
   " hi agdaoperator
+  hi agdahole                   guibg=#444444
+  " hi agdahole                   guibg=#1e731e
 endif
 
 if g:agda_theme == "light"
@@ -86,4 +89,5 @@ if g:agda_theme == "light"
   " hi agdaargument
   hi agdamacro                  guifg=#458b74
   " hi agdaoperator
+  hi agdahole                   guibg=#b4eeb4
 endif

@@ -74,7 +74,14 @@ local function handle (_, data)
         -- table.insert(state.goals, newGoal)
         state.goals[newGoal.id] = newGoal
 
-        if from.top == to.top and from.left + 1 == to.left then
+        if not state.originalGoalSizes[newGoal.id] then
+          state.originalGoalSizes[newGoal.id] = (
+            to.left - from.left -- inclusive => +2
+          )
+        end
+
+        -- if from.top == to.top and from.left + 1 == to.left then
+        if state.originalGoalSizes[newGoal.id] == 1 then
           table.insert(needsExpansion, newGoal)
         end
       end
@@ -103,17 +110,6 @@ local function handle (_, data)
         })
       end
 
-      utilities.update_goal_locations()
-      -- if state.status == enums.Status.EMPTY then
-      for _, g in pairs(state.goals) do
-        if not state.originalGoalSizes[g.id] then
-          state.originalGoalSizes[g.id] = (
-            g.location.to.left - g.location.from.left -- inclusive => +2
-          )
-        end
-      end
-      -- end
-
       output.print_goals(state.goals)
       output.fit_height()
       output.reset_cursor()
@@ -123,25 +119,37 @@ local function handle (_, data)
     elseif message.info.kind == 'GoalSpecific' then
       output.clear()
 
-      output.buf_print(
-        'Goal: ' .. utilities.remove_qualifications(
-          message.info.goalInfo.type
-        )
-      )
-
-      if message.info.goalInfo.typeAux.kind == "GoalAndHave" then
+      if message.info.goalInfo.kind == 'GoalType' then
+        -- if message.info.goalInfo.typeAux.kind == 'GoalAndHave' or
+        --    message.info.goalInfo.typeAux.kind == 'GoalOnly' then
         output.buf_print(
-          'Have: ' .. utilities.remove_qualifications(
-            message.info.goalInfo.typeAux.expr
+          'Goal: ' .. utilities.remove_qualifications(
+            message.info.goalInfo.type
           )
         )
-      end
+        --end
 
-      if #message.info.goalInfo.entries > 0 then
-        output.buf_print('-----')
-        output.buf_print('Context:')
+        if message.info.goalInfo.typeAux.kind == 'GoalAndHave' then
+          output.buf_print(
+            'Have: ' .. utilities.remove_qualifications(
+              message.info.goalInfo.typeAux.expr
+            )
+          )
+        end
 
-        output.print_context(message.info.goalInfo.entries)
+        if #message.info.goalInfo.entries > 0 then
+          output.buf_print('-----')
+          output.buf_print('Context:')
+
+          output.print_context(message.info.goalInfo.entries)
+        end
+
+      elseif message.info.goalInfo.kind == 'InferredType' then
+        output.buf_print(message.info.goalInfo.expr)
+
+      elseif message.info.goalInfo.kind == 'NormalForm' then
+        output.buf_print(message.info.goalInfo.expr)
+
       end
 
       output.fit_height()
@@ -150,6 +158,18 @@ local function handle (_, data)
     elseif message.info.kind == 'Context' then
       output.clear()
       output.print_context(message.info.context)
+      output.fit_height()
+      output.reset_cursor()
+
+    elseif message.info.kind == 'InferredType' then
+      output.clear()
+      output.buf_print(message.info.expr)
+      output.fit_height()
+      output.reset_cursor()
+
+    elseif message.info.kind == 'NormalForm' then
+      output.clear()
+      output.buf_print(message.info.expr)
       output.fit_height()
       output.reset_cursor()
 

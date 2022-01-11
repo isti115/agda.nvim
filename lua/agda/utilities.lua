@@ -1,4 +1,47 @@
+local enums = require('agda.enums')
 local state = require('agda.state')
+
+
+--[[ Text manipulation ]]--
+
+-- Needed because of: https://github.com/agda/agda/issues/5665
+local function remove_qualifications (input)
+  -- TODO Handle linebreaks properly with indentation:
+  local oneLine = string.gsub(string.gsub(input, '\n', ' '), ' +', ' ')
+  local unqualified = string.gsub(oneLine, '[^ ()]-%.', '')
+  return unqualified
+end
+
+local function trim_start(input)
+   local trimmed = string.gsub(input, '^%s*(.-)$', '%1')
+   return trimmed
+end
+
+local function trim(input)
+   local trimmed = string.gsub(input, '^%s*(.-)%s*$', '%1')
+   return trimmed
+end
+
+
+--[[ State checks ]]--
+
+local function ensure_loaded ()
+  if state.status ~= enums.Status.READY then
+    print('Please load the file first!')
+    return false
+  else
+    return true
+  end
+end
+
+local function ensure_goals ()
+  if next(state.goals) == nil then
+    print('There are no goals in the currently loaded buffer.')
+    return false
+  else
+    return true
+  end
+end
 
 
 --[[ Buffer and window operations ]]--
@@ -112,6 +155,7 @@ end
 
 --[[ Goal related ]]--
 
+-- TODO Use `end_col` and have only one extmark per goal?
 local function set_extmark (top, left, options)
   return vim.api.nvim_buf_set_extmark(
     state.code_buf, state.extmark_namespace, top, left, options
@@ -174,6 +218,15 @@ local function get_goal_content (goal)
   return content
 end
 
+local function get_goal_content_or_prompt (goal, prompt)
+  local content = get_goal_content(goal)
+  if #string.gsub(content, '%s', '') > 0 then
+    return content
+  else
+    return vim.fn.input(prompt)
+  end
+end
+
 local function get_goal_interval (goal)
   update_goal_location(goal)
 
@@ -219,11 +272,6 @@ local function find_surrounding_goals ()
   update_goal_locations()
   local top_left = get_cursor_top_left(state.code_win)
 
-  if #state.goals == 0 then
-    print('There are no goals in the currently loaded buffer.')
-    return
-  end
-
   local sortedGoals = {}
   for _, g in pairs(state.goals) do
     table.insert(sortedGoals, g)
@@ -250,27 +298,6 @@ local function find_surrounding_goals ()
 end
 
 
---[[ Text manipulation ]]--
-
--- Needed because of: https://github.com/agda/agda/issues/5665
-local function remove_qualifications (input)
-  -- TODO Handle linebreaks properly with indentation:
-  local oneLine = string.gsub(string.gsub(input, '\n', ' '), ' +', ' ')
-  local unqualified = string.gsub(oneLine, '[^ ()]-%.', '')
-  return unqualified
-end
-
-local function trim_start(input)
-   local trimmed = string.gsub(input, "^%s*(.-)$", "%1")
-   return trimmed
-end
-
-local function trim(input)
-   local trimmed = string.gsub(input, "^%s*(.-)%s*$", "%1")
-   return trimmed
-end
-
-
 --[[ Logging ]]--
 
 local function log(content, name)
@@ -283,31 +310,35 @@ end
 
 
 return {
-  find_or_create_buf     = find_or_create_buf     ,
-  find_or_create_win     = find_or_create_win     ,
-  current_file           = current_file           ,
+  remove_qualifications      = remove_qualifications      ,
+  trim_start                 = trim_start                 ,
+  trim                       = trim                       ,
 
-  get_cursor_top_left    = get_cursor_top_left    ,
-  get_cursor_line_col    = get_cursor_line_col    ,
-  is_before_top_left     = is_before_top_left     ,
-  is_before_line_col     = is_before_line_col     ,
-  character_to_byte_map  = character_to_byte_map  ,
-  update_pos_to_byte     = update_pos_to_byte     ,
-  byte_to_location       = byte_to_location       ,
-  pos_to_location        = pos_to_location        ,
+  ensure_loaded              = ensure_loaded              ,
+  ensure_goals               = ensure_goals               ,
 
-  set_extmark            = set_extmark            ,
-  get_extmark            = get_extmark            ,
-  update_goal_location   = update_goal_location   ,
-  update_goal_locations  = update_goal_locations  ,
-  find_surrounding_goals = find_surrounding_goals ,
-  find_current_goal      = find_current_goal      ,
-  get_goal_content       = get_goal_content       ,
-  get_goal_interval      = get_goal_interval      ,
+  find_or_create_buf         = find_or_create_buf         ,
+  find_or_create_win         = find_or_create_win         ,
+  current_file               = current_file               ,
 
-  remove_qualifications  = remove_qualifications  ,
-  trim_start             = trim_start             ,
-  trim                   = trim                   ,
+  get_cursor_top_left        = get_cursor_top_left        ,
+  get_cursor_line_col        = get_cursor_line_col        ,
+  is_before_top_left         = is_before_top_left         ,
+  is_before_line_col         = is_before_line_col         ,
+  character_to_byte_map      = character_to_byte_map      ,
+  update_pos_to_byte         = update_pos_to_byte         ,
+  byte_to_location           = byte_to_location           ,
+  pos_to_location            = pos_to_location            ,
 
-  log                    = log                    ,
+  set_extmark                = set_extmark                ,
+  get_extmark                = get_extmark                ,
+  update_goal_location       = update_goal_location       ,
+  update_goal_locations      = update_goal_locations      ,
+  find_surrounding_goals     = find_surrounding_goals     ,
+  find_current_goal          = find_current_goal          ,
+  get_goal_content           = get_goal_content           ,
+  get_goal_content_or_prompt = get_goal_content_or_prompt ,
+  get_goal_interval          = get_goal_interval          ,
+
+  log                        = log                        ,
 }

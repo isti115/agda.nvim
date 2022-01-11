@@ -5,11 +5,17 @@ local function make (filename, command)
   )
 end
 
+local function make_point(point)
+  return string.format(
+    'Pn () %d %d %d',
+    point.pos, point.line, point.col
+  )
+end
+
 local function make_interval (interval)
   return string.format(
-    'Interval (Pn () %d %d %d) (Pn () %d %d %d)',
-    interval.start.pos, interval.start.line, interval.start.col,
-    interval['end'].pos, interval['end'].line, interval['end'].col
+    'Interval (%s) (%s)',
+    make_point(interval.start), make_point(interval['end'])
   )
 end
 
@@ -79,18 +85,50 @@ end
 local function give (goal_id, content, range)
   return string.format(
     -- 'Cmd_give WithoutForce %s noRange "%s"'
-    'Cmd_give WithoutForce %s (%s) "%s"',
+    'Cmd_give WithoutForce %d (%s) "%s"',
     goal_id, range, content
+  )
+end
+
+local function compute (mode, goal_id, expression)
+  return string.format(
+    'Cmd_compute %s %d noRange "%s"',
+    mode, goal_id, expression
+  )
+end
+
+local function compute_toplevel (mode, expression)
+  return string.format(
+    'Cmd_compute_toplevel %s "%s"',
+    mode, expression
+  )
+end
+
+local function infer (mode, goal_id, expression)
+  return string.format(
+    'Cmd_infer %s %d noRange "%s"',
+    mode, goal_id, expression
+  )
+end
+
+local function infer_toplevel (mode, expression)
+  return string.format(
+    'Cmd_infer_toplevel %s "%s"',
+    mode, expression
   )
 end
 
 return ({
   auto                    = auto                    ,
   case                    = case                    ,
+  compute                 = compute                 ,
+  compute_toplevel        = compute_toplevel        ,
   context                 = context                 ,
   give                    = give                    ,
   goal_type_context       = goal_type_context       ,
   goal_type_context_infer = goal_type_context_infer ,
+  infer                   = infer                   ,
+  infer_toplevel          = infer_toplevel          ,
   load                    = load                    ,
   make                    = make                    ,
   make_interval           = make_interval           ,
