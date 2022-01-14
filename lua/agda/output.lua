@@ -31,7 +31,7 @@ local function buf_print (text)
 end
 
 local function print_goals (goals)
-  for _, g in ipairs(goals) do
+  for _, g in pairs(goals) do
     -- set_lines(g.id, g.id, { '?' .. g.id .. ' : ' .. g.type })
     buf_print('?' .. g.id .. ' : ' .. utilities.remove_qualifications(g.type))
   end

@@ -6,7 +6,7 @@ return {
   goals               = nil ,
   highlight_namespace = nil ,
   offsets             = nil ,
-  originalGoalSizes   = nil ,
+  original_holes      = nil ,
   output_buf          = nil ,
   output_win          = nil ,
   pending             = nil ,

@@ -5,19 +5,31 @@ local output     = require('agda.output')
 local state      = require('agda.state')
 local utilities  = require('agda.utilities')
 
+local function clear ()
+  vim.api.nvim_buf_clear_namespace(
+    state.code_buf,
+    state.extmark_namespace,
+    0, -1
+  )
+
+  vim.api.nvim_buf_clear_namespace(
+    state.code_buf,
+    state.highlight_namespace,
+    0, -1
+  )
+end
+
 local function load ()
   state.code_buf = vim.api.nvim_get_current_buf()
   state.code_win = vim.api.nvim_get_current_win()
 
   state.status = enums.Status.EMPTY
+  state.goals = {}
+  state.original_holes = {}
   state.offsets = {}
-  state.originalGoalSizes = {}
   output.initialize()
+  clear()
 
-  -- vim.api.nvim_command( -- TODO do this with goal info in mind?
-  --   ':%s/\\(^\\|\\s\\|[({]\\)\\zs?\\ze\\(\\s\\|$\\|[)}]\\)/{!   !}/ge'
-  -- ) -- TODO silent instead of e?
-  -- vim.api.nvim_command('noh') -- TODO find better solution
   vim.api.nvim_command('silent write')
 
   if not (connection.is_alive()) then connection.start() end
@@ -205,20 +217,6 @@ local function infer ()
       commands.infer(enums.Rewrite.SIMPLIFIED, goal.id, expression)
     ))
   end
-end
-
-local function clear ()
-  vim.api.nvim_buf_clear_namespace(
-    state.code_buf,
-    state.extmark_namespace,
-    0, -1
-  )
-
-  vim.api.nvim_buf_clear_namespace(
-    state.code_buf,
-    state.highlight_namespace,
-    0, -1
-  )
 end
 
 return {

@@ -87,10 +87,13 @@ end
 
 local function get_cursor_top_left (win)
   local position = vim.api.nvim_win_get_cursor(win)
+  local top = position[1] - 1
+  local left = position[2]
 
   return {
-    top = position[1] - 1,
-    left = position[2],
+    top = top,
+    left = left,
+    byte = vim.api.nvim_buf_get_offset(state.code_buf, top) + left
   }
 end
 
@@ -172,6 +175,12 @@ local function get_extmark (id)
     left = left,
     byte = vim.api.nvim_buf_get_offset(state.code_buf, top) + left
   }
+end
+
+local function del_extmark (id)
+  return vim.api.nvim_buf_del_extmark(
+    state.code_buf, state.extmark_namespace, id
+  )
 end
 
 local function update_goal_location (goal)
@@ -264,7 +273,7 @@ local function get_goal_interval (goal)
   --   }
   -- }
 
-  return goal.range
+  return goal.original_range
 end
 
 local function find_surrounding_goals ()
@@ -277,7 +286,12 @@ local function find_surrounding_goals ()
     table.insert(sortedGoals, g)
   end
 
-  table.sort(sortedGoals, function (a, b) return a.location.from.byte < b.location.from.byte end)
+  table.sort(
+    sortedGoals,
+    function (a, b)
+      return a.location.from.byte < b.location.from.byte
+    end
+  )
 
   -- local previous = state.goals[#state.goals]
   -- local next = state.goals[1]
@@ -332,6 +346,7 @@ return {
 
   set_extmark                = set_extmark                ,
   get_extmark                = get_extmark                ,
+  del_extmark                = del_extmark                ,
   update_goal_location       = update_goal_location       ,
   update_goal_locations      = update_goal_locations      ,
   find_surrounding_goals     = find_surrounding_goals     ,
