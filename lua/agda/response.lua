@@ -30,21 +30,22 @@ local function handle (_, data)
 
       for _, g in ipairs(message.info.visibleGoals) do
         local id = g.constraintObj.id
-        local range = g.constraintObj.range[1]
-        local from_byte = state.pos_to_byte[range.start.pos]
-        local to_byte = state.pos_to_byte[range['end'].pos]
-
-        if state.paren then
-          from_byte = from_byte + 1
-          to_byte = to_byte + 1
-        end
-
-        -- local from = utilities.pos_to_location(range.start.pos)
-        -- local to = utilities.pos_to_location(range['end'].pos)
-        local from = utilities.byte_to_location(from_byte)
-        local to = utilities.byte_to_location(to_byte)
 
         if not state.goals[id] then
+          local range = g.constraintObj.range[1]
+          local from_byte = state.pos_to_byte[range.start.pos]
+          local to_byte = state.pos_to_byte[range['end'].pos]
+
+          if state.paren then
+            from_byte = from_byte + 1
+            to_byte = to_byte + 1
+          end
+
+          -- local from = utilities.pos_to_location(range.start.pos)
+          -- local to = utilities.pos_to_location(range['end'].pos)
+          local from = utilities.byte_to_location(from_byte)
+          local to = utilities.byte_to_location(to_byte)
+
           local fromId = utilities.set_extmark(from.top, from.left, {})
           local toId = utilities.set_extmark(
             to.top, to.left,
