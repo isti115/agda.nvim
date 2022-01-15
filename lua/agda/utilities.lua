@@ -239,41 +239,32 @@ end
 local function get_goal_interval (goal)
   update_goal_location(goal)
 
-  -- local from_line_start = vim.api.nvim_buf_get_offset(
-  --   state.code_buf,
-  --   goal.location.from.top
-  -- )
-  --
-  -- local to_line_start = vim.api.nvim_buf_get_offset(
-  --   state.code_buf,
-  --   goal.location.from.top
-  -- )
-
-  -- print(offset , goal.location.from.left)
-
 
   -- local content = get_goal_content(goal)
   -- local pad = #string.gsub(content, '^(%s*).*', '%1')
   -- local hack = from_line_start + goal.location.from.left + 1 + pad
 
   -- TODO Check this (bytes need conversion to pos)
-  -- return {
-  --   start = {
-  --     col = goal.location.from.left,
-  --     line = goal.location.from.top + 1,
-  --     pos = state.byte_to_pos[goal.location.from.byte] + 1,
-  --     -- pos = from_line_start + goal.location.from.left + 1,
-  --     -- pos = hack,
-  --   },
-  --   ['end'] = {
-  --     col = goal.location.to.left,
-  --     line = goal.location.to.top + 1,
-  --     pos = state.byte_to_pos[goal.location.to.byte],
-  --     -- pos = to_line_start + goal.location.to.left,
-  --   }
-  -- }
-
-  return goal.original_range
+  return {
+    start = {
+      -- col = goal.location.from.left,
+      -- line = goal.location.from.top + 1,
+      col = 0,
+      line = 0,
+      pos = state.byte_to_pos[goal.location.from.byte] + 1,
+      -- pos = from_line_start + goal.location.from.left + 1,
+      -- pos = hack,
+    },
+    ['end'] = {
+      col = 0,
+      line = 0,
+      pos = 0
+      -- col = goal.location.to.left,
+      -- line = goal.location.to.top + 1,
+      -- pos = state.byte_to_pos[goal.location.to.byte],
+      -- pos = to_line_start + goal.location.to.left,
+    }
+  }
 end
 
 local function find_surrounding_goals ()

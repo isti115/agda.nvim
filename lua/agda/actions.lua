@@ -25,8 +25,7 @@ local function load ()
 
   state.status = enums.Status.EMPTY
   state.goals = {}
-  state.original_holes = {}
-  state.offsets = {}
+  state.paren = nil
   output.initialize()
   clear()
 
@@ -219,6 +218,15 @@ local function infer ()
   end
 end
 
+local function goals ()
+  output.unlock()
+  output.clear()
+  output.print_goals(state.goals)
+  output.fit_height()
+  output.reset_cursor()
+  output.lock()
+end
+
 return {
   auto                    = auto                     ,
   back                    = back                     ,
@@ -230,6 +238,7 @@ return {
   give                    = give                     ,
   goal_type_context       = goal_type_context        ,
   goal_type_context_infer = goal_type_context_infer  ,
+  goals                   = goals                    ,
   infer                   = infer                    ,
   load                    = load                     ,
   refine                  = refine                   ,

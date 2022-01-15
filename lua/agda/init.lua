@@ -61,6 +61,7 @@ return {
   give                    = actions.give                       ,
   goal_type_context       = actions.goal_type_context          ,
   goal_type_context_infer = actions.goal_type_context_infer    ,
+  goals                   = actions.goals                      ,
   infer                   = actions.infer                      ,
   load                    = actions.load                       ,
   refine                  = actions.refine                     ,
