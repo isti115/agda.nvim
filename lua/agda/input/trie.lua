@@ -21,7 +21,7 @@ function trie.new(inpt)
 
   if inpt ~= nil then
     for k,v in pairs(inpt) do
-      result[k] = v
+      result:set_at(k, v)
     end
   end
 

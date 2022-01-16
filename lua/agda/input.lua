@@ -24,7 +24,7 @@ function input.new(symbols)
   return result
 end
 
-function input.fromfile(fname)
+function input.from_file(fname)
   local symbols, err = symbol_from_file(fname)
 
   if err ~= nil then
