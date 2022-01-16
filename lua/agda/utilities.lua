@@ -87,10 +87,13 @@ end
 
 local function get_cursor_top_left (win)
   local position = vim.api.nvim_win_get_cursor(win)
+  local top = position[1] - 1
+  local left = position[2]
 
   return {
-    top = position[1] - 1,
-    left = position[2],
+    top = top,
+    left = left,
+    byte = vim.api.nvim_buf_get_offset(state.code_buf, top) + left
   }
 end
 
@@ -174,6 +177,12 @@ local function get_extmark (id)
   }
 end
 
+local function del_extmark (id)
+  return vim.api.nvim_buf_del_extmark(
+    state.code_buf, state.extmark_namespace, id
+  )
+end
+
 local function update_goal_location (goal)
   goal.location.from = get_extmark(goal.marks.from)
   goal.location.to = get_extmark(goal.marks.to)
@@ -230,41 +239,32 @@ end
 local function get_goal_interval (goal)
   update_goal_location(goal)
 
-  -- local from_line_start = vim.api.nvim_buf_get_offset(
-  --   state.code_buf,
-  --   goal.location.from.top
-  -- )
-  --
-  -- local to_line_start = vim.api.nvim_buf_get_offset(
-  --   state.code_buf,
-  --   goal.location.from.top
-  -- )
-
-  -- print(offset , goal.location.from.left)
-
 
   -- local content = get_goal_content(goal)
   -- local pad = #string.gsub(content, '^(%s*).*', '%1')
   -- local hack = from_line_start + goal.location.from.left + 1 + pad
 
   -- TODO Check this (bytes need conversion to pos)
-  -- return {
-  --   start = {
-  --     col = goal.location.from.left,
-  --     line = goal.location.from.top + 1,
-  --     pos = state.byte_to_pos[goal.location.from.byte] + 1,
-  --     -- pos = from_line_start + goal.location.from.left + 1,
-  --     -- pos = hack,
-  --   },
-  --   ['end'] = {
-  --     col = goal.location.to.left,
-  --     line = goal.location.to.top + 1,
-  --     pos = state.byte_to_pos[goal.location.to.byte],
-  --     -- pos = to_line_start + goal.location.to.left,
-  --   }
-  -- }
-
-  return goal.range
+  return {
+    start = {
+      -- col = goal.location.from.left,
+      -- line = goal.location.from.top + 1,
+      col = 0,
+      line = 0,
+      pos = state.byte_to_pos[goal.location.from.byte] + 1,
+      -- pos = from_line_start + goal.location.from.left + 1,
+      -- pos = hack,
+    },
+    ['end'] = {
+      col = 0,
+      line = 0,
+      pos = 0
+      -- col = goal.location.to.left,
+      -- line = goal.location.to.top + 1,
+      -- pos = state.byte_to_pos[goal.location.to.byte],
+      -- pos = to_line_start + goal.location.to.left,
+    }
+  }
 end
 
 local function find_surrounding_goals ()
@@ -277,7 +277,12 @@ local function find_surrounding_goals ()
     table.insert(sortedGoals, g)
   end
 
-  table.sort(sortedGoals, function (a, b) return a.location.from.byte < b.location.from.byte end)
+  table.sort(
+    sortedGoals,
+    function (a, b)
+      return a.location.from.byte < b.location.from.byte
+    end
+  )
 
   -- local previous = state.goals[#state.goals]
   -- local next = state.goals[1]
@@ -332,6 +337,7 @@ return {
 
   set_extmark                = set_extmark                ,
   get_extmark                = get_extmark                ,
+  del_extmark                = del_extmark                ,
   update_goal_location       = update_goal_location       ,
   update_goal_locations      = update_goal_locations      ,
   find_surrounding_goals     = find_surrounding_goals     ,

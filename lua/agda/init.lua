@@ -5,17 +5,17 @@
 
   Terminology:
     + nvim:
-      - top  : row number starting from zero
-      - left : byte offset from the beginning of the line
-      - byte : byte offset from the beginning of the file
+      - top  : row number (0-indexed)
+      - left : byte offset from the beginning of the line (0-indexed)
+      - byte : byte offset from the beginning of the file (0-indexed)
 
       - location : { top, left, byte } -- TODO Make these consistent
       - span : { from = location , to = location } -- TODO
 
     + Agda:
-      - line : row number starting from one
-      - col  : character offset from the beginning of the line
-      - pos  : character offset from the beginning of the file
+      - line : row number (1-indexed)
+      - col  : character offset from the beginning of the line (1-indexed)
+      - pos  : character offset from the beginning of the file (1-indexed)
 
       - point : { pos, col, line }
       - range : [ { start = point, end = point } ]
@@ -34,13 +34,14 @@ local connection = require('agda.connection')
 local enums      = require('agda.enums')
 local output     = require('agda.output')
 local state      = require('agda.state')
+local utilities      = require('agda.utilities')
 
 local function test ()
-  -- print(vim.inspect(state.pos_to_byte))
-  -- print(vim.inspect(state.originalGoalSizes), vim.inspect(state.offsets))
-  -- print(tostring(state.status))
+  -- print(vim.inspect(state))
+  -- print(vim.inspect(state.original_holes))
+  -- utilities.update_goal_locations()
   -- print(vim.inspect(state.goals))
-  -- print(#state.goals)
+  print(vim.inspect(utilities.get_cursor_top_left()))
 end
 
 -- Highlighting / Extmark Namespace
@@ -60,6 +61,7 @@ return {
   give                    = actions.give                       ,
   goal_type_context       = actions.goal_type_context          ,
   goal_type_context_infer = actions.goal_type_context_infer    ,
+  goals                   = actions.goals                      ,
   infer                   = actions.infer                      ,
   load                    = actions.load                       ,
   refine                  = actions.refine                     ,

@@ -15,6 +15,7 @@ if g:agda_keymap == "vim"
   nnoremap <silent> <LocalLeader>f :lua require('agda').forward()<Return>
   nnoremap <silent> <LocalLeader>b :lua require('agda').back()<Return>
   nnoremap <silent> <LocalLeader>v :lua require('agda').version()<Return>
+  nnoremap <silent> <LocalLeader>? :lua require('agda').goals()<Return>
 endif
 
 if g:agda_keymap == "emacs"
@@ -30,6 +31,7 @@ if g:agda_keymap == "emacs"
   nnoremap <silent> <C-c><C-f> :lua require('agda').forward()<Return>
   nnoremap <silent> <C-c><C-b> :lua require('agda').back()<Return>
   nnoremap <silent> <C-c><C-v> :lua require('agda').version()<Return>
+  nnoremap <silent> <C-c><C-?> :lua require('agda').goals()<Return>
 endif
 
 setlocal commentstring=--\ %s

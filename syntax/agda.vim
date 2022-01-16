@@ -51,6 +51,7 @@ if g:agda_theme == "dark"
   " hi agdaoperator
   hi agdahole                   guibg=#444444
   " hi agdahole                   guibg=#1e731e
+  hi agdaholenumber             guifg=#b4eeb4
 endif
 
 if g:agda_theme == "light"
@@ -90,4 +91,5 @@ if g:agda_theme == "light"
   hi agdamacro                  guifg=#458b74
   " hi agdaoperator
   hi agdahole                   guibg=#b4eeb4
+  hi agdaholenumber             guifg=#1e731e
 endif

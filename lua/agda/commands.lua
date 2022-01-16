@@ -21,9 +21,10 @@ end
 
 local function make_range (filename, interval)
   return string.format(
-    -- 'intervalsToRange Nothing [%s]',
-    'intervalsToRange (Just (mkAbsolute "%s")) [%s]',
-    filename, interval
+    'intervalsToRange Nothing [%s]',
+    interval
+    -- 'intervalsToRange (Just (mkAbsolute "%s")) [%s]',
+    -- filename, interval
   )
 end
 

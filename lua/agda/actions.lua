@@ -5,19 +5,30 @@ local output     = require('agda.output')
 local state      = require('agda.state')
 local utilities  = require('agda.utilities')
 
+local function clear ()
+  vim.api.nvim_buf_clear_namespace(
+    state.code_buf,
+    state.extmark_namespace,
+    0, -1
+  )
+
+  vim.api.nvim_buf_clear_namespace(
+    state.code_buf,
+    state.highlight_namespace,
+    0, -1
+  )
+end
+
 local function load ()
   state.code_buf = vim.api.nvim_get_current_buf()
   state.code_win = vim.api.nvim_get_current_win()
 
   state.status = enums.Status.EMPTY
-  state.offsets = {}
-  state.originalGoalSizes = {}
+  state.goals = {}
+  state.paren = nil
   output.initialize()
+  clear()
 
-  -- vim.api.nvim_command( -- TODO do this with goal info in mind?
-  --   ':%s/\\(^\\|\\s\\|[({]\\)\\zs?\\ze\\(\\s\\|$\\|[)}]\\)/{!   !}/ge'
-  -- ) -- TODO silent instead of e?
-  -- vim.api.nvim_command('noh') -- TODO find better solution
   vim.api.nvim_command('silent write')
 
   if not (connection.is_alive()) then connection.start() end
@@ -207,18 +218,13 @@ local function infer ()
   end
 end
 
-local function clear ()
-  vim.api.nvim_buf_clear_namespace(
-    state.code_buf,
-    state.extmark_namespace,
-    0, -1
-  )
-
-  vim.api.nvim_buf_clear_namespace(
-    state.code_buf,
-    state.highlight_namespace,
-    0, -1
-  )
+local function goals ()
+  output.unlock()
+  output.clear()
+  output.print_goals(state.goals)
+  output.fit_height()
+  output.reset_cursor()
+  output.lock()
 end
 
 return {
@@ -232,6 +238,7 @@ return {
   give                    = give                     ,
   goal_type_context       = goal_type_context        ,
   goal_type_context_infer = goal_type_context_infer  ,
+  goals                   = goals                    ,
   infer                   = infer                    ,
   load                    = load                     ,
   refine                  = refine                   ,

@@ -3,6 +3,9 @@ local output    = require('agda.output')
 local state     = require('agda.state')
 local utilities = require('agda.utilities')
 
+-- local expanded_goal = '{!   !}  ' -- TODO Hack to avoid virtual text overlap
+local expanded_goal = '{!   !}'
+
 local function handle (_, data)
   output.unlock()
   local message = vim.fn.json_decode(
@@ -16,96 +19,82 @@ local function handle (_, data)
 
   if message.kind == 'DisplayInfo' then
     if message.info.kind == 'AllGoalsWarnings' then
+      -- Preparation
       utilities.update_pos_to_byte()
+      utilities.update_goal_locations()
+
+      -- Cleanup
       output.clear()
-      state.goals = {}
 
-      vim.api.nvim_buf_clear_namespace(
-        state.code_buf,
-        state.extmark_namespace,
-        0, -1
-      )
-
-      local needsExpansion = {}
+      local needs_expansion = {}
 
       for _, g in ipairs(message.info.visibleGoals) do
-        local range = g.constraintObj.range[1]
-        local from_byte = state.pos_to_byte[range.start.pos]
-        local to_byte = state.pos_to_byte[range['end'].pos]
+        local id = g.constraintObj.id
 
-        -- TODO This is just a hack to fix offsets caused by giving
-        for _, o in ipairs(state.offsets) do
-          if o.byte < from_byte then -- TODO or less than?
-            from_byte = from_byte - o.length
+        if not state.goals[id] then
+          local range = g.constraintObj.range[1]
+          local from_byte = state.pos_to_byte[range.start.pos]
+          local to_byte = state.pos_to_byte[range['end'].pos]
+
+          if state.paren then
+            from_byte = from_byte + 1
+            to_byte = to_byte + 1
           end
-          if o.byte < to_byte then -- TODO or less than?
-            to_byte = to_byte - o.length
-          end
-        end
 
-        -- local from = utilities.pos_to_location(range.start.pos)
-        -- local to = utilities.pos_to_location(range['end'].pos)
-        local from = utilities.byte_to_location(from_byte)
-        local to = utilities.byte_to_location(to_byte)
+          -- local from = utilities.pos_to_location(range.start.pos)
+          -- local to = utilities.pos_to_location(range['end'].pos)
+          local from = utilities.byte_to_location(from_byte)
+          local to = utilities.byte_to_location(to_byte)
 
-        local fromId = utilities.set_extmark(from.top, from.left, {})
-        local toId = utilities.set_extmark(
-          to.top, to.left,
-          {
-            hl_group = 'agdakeyword', -- TODO this doesn't seem to work
-            virt_text_pos = 'overlay',
-            virt_text_hide = true,
-            virt_text = {{'?' .. g.constraintObj.id}},
-            right_gravity = false,
-          }
-        )
-
-        local newGoal = {
-          id = g.constraintObj.id,
-          type = g.type,
-          marks = {
-            from = fromId,
-            to = toId,
-          },
-          location = {},
-          range = range
-        }
-
-        -- table.insert(state.goals, newGoal)
-        state.goals[newGoal.id] = newGoal
-
-        if not state.originalGoalSizes[newGoal.id] then
-          state.originalGoalSizes[newGoal.id] = (
-            to.left - from.left -- inclusive => +2
+          local fromId = utilities.set_extmark(from.top, from.left, {})
+          local toId = utilities.set_extmark(
+            to.top, to.left,
+            {
+              virt_text_pos = 'overlay',
+              virt_text_hide = true,
+              virt_text = {{'?' .. id, 'agdaholenumber'}},
+              -- hl_mode = '?', -- TODO Don't affect goal number background
+              right_gravity = false,
+            }
           )
-        end
 
-        -- if from.top == to.top and from.left + 1 == to.left then
-        if state.originalGoalSizes[newGoal.id] == 1 then
-          table.insert(needsExpansion, newGoal)
+          local newGoal = {
+            id = id,
+            type = g.type,
+            marks = {
+              from = fromId,
+              to = toId,
+            },
+            location = {}
+          }
+
+          state.goals[id] = newGoal
+
+          if from_byte + 1 == to_byte then
+            table.insert(needs_expansion, newGoal)
+          end
+        else
+          state.goals[id].type = g.type
         end
       end
 
-      -- for _, p in ipairs(state.pending) do
-      --   p()
-      -- end
-      -- state.pending = {}
-
-      for _, g in ipairs(needsExpansion) do
+      for _, g in ipairs(needs_expansion) do
         local from = utilities.get_extmark(g.marks.from)
         local to   = utilities.get_extmark(g.marks.to)
+
         vim.api.nvim_buf_set_text(
           state.code_buf,
           from.top, from.left, to.top, to.left,
-          {'{!   !}  '} -- TODO Hack to avoid virtual text overlap
+          {expanded_goal}
         )
+
         utilities.set_extmark(from.top, from.left, { id = g.marks.from, })
-        utilities.set_extmark(to.top, to.left + 6, {
+        utilities.set_extmark(from.top, from.left + #expanded_goal, {
           id = g.marks.to,
-          hl_group = 'agdakeyword', -- TODO this doesn't seem to work
           virt_text_pos = 'overlay',
           virt_text_hide = true,
-          virt_text = {{'?' .. g.id}},
+          virt_text = {{'?' .. g.id, 'agdaholenumber'}},
+          -- hl_mode = '?', -- TODO Don't affect goal number background
           right_gravity = false,
         })
       end
@@ -206,23 +195,16 @@ local function handle (_, data)
     local from = goal.location.from
     local to = goal.location.to
 
+    local content = utilities.trim(utilities.get_goal_content(goal))
+
     local newContent
       =   message.giveResult.str
       and utilities.remove_qualifications(message.giveResult.str)
       or  message.giveResult.paren
-      and '(' .. utilities.get_goal_content(goal) .. ')'
+      and '(' .. content .. ')'
       or  true -- fallback / else
-      and utilities.get_goal_content(goal)
+      and content
 
-    newContent = utilities.trim(newContent) -- TODO Should this be done by Agda?
-
-    table.insert(state.offsets, {
-      byte = to.byte,
-      -- length = (to.left - from.left) - #newContent
-      length = state.originalGoalSizes[goal.id] - #newContent
-    })
-
-    -- table.insert(state.pending, function ()
     vim.api.nvim_buf_set_text(
       state.code_buf,
       from.top, from.left, to.top, to.left,
@@ -233,10 +215,15 @@ local function handle (_, data)
       -- { '  ' .. newContent .. '  ' }
       -- { '  ' .. utilities.trim_start(newContent) .. '  ' }
     )
-    -- end)
+
+    state.paren = message.giveResult.paren
+
+    utilities.del_extmark(goal.marks.from)
+    utilities.del_extmark(goal.marks.to)
+
+    state.goals[goal.id] = nil
 
     utilities.update_pos_to_byte()
-
 
     -- vim.api.nvim_buf_del_extmark(
     --   state.code_buf, state.namespace,
