@@ -1,6 +1,3 @@
-
-local trie = require 'agda.input.trie'
-local utf8 = require 'lua-utf8'
 local symbol_from_file = require 'agda.input.file'
 
 local function get_cursor(buf)
@@ -132,10 +129,6 @@ function input:update()
   self:update_highlight(vim.fn.len(text))
 
   if self.state.candidates ~= nil then
-    if #self.state.candidates == 1 then
-      return self:commit()
-    end
-
     vim.api.nvim_buf_set_keymap(0, 'i', '<Tab>', '', {
       callback = function()
         self:next_choice()
@@ -197,15 +190,19 @@ function input:init_buf()
     autocmd! * <buffer>
     autocmd TextChangedI <buffer> AgdaInputUpdate 
     autocmd TextChangedP <buffer> AgdaInputUpdate 
-    "autocmd InsertLeave <buffer> AgdaInputCommit
-    "autocmd BufLeave <buffer> AgdaInputCommit
+    " autocmd InsertLeave <buffer> AgdaInputCommit
+    " autocmd BufLeave <buffer> AgdaInputCommit
     augroup END
-
-    inoremap <buffer> <CR> <Cmd>AgdaInputCommit<CR>
-    inoremap <buffer> <space> <cmd>AgdaInputCommit<cr><space>
-    inoremap <buffer> <esc> <cmd>AgdaInputReset<cr>
     ]]
-
+    vim.api.nvim_buf_set_keymap(buf, 'i', '<cr>', '<cmd>AgdaInputCommit<cr>', {
+      noremap = true
+    })
+    vim.api.nvim_buf_set_keymap(buf, 'i', '<space>', '<cmd>AgdaInputCommit<cr><space>', {
+      noremap = true
+    })
+    vim.api.nvim_buf_set_keymap(buf, 'i', '<esc>', '<cmd>AgdaInputReset<cr>', {
+      noremap = true
+    })
     vim.api.nvim_buf_set_keymap(buf, 'i', '<BS>', '', {
       callback = function()
         local _, col = get_cursor(0)
