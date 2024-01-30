@@ -146,6 +146,19 @@ local function goal_type_context ()
   ))
 end
 
+local function goal_type_context_norm ()
+  local goal = utilities.find_current_goal()
+  if not goal then
+    print 'Place the cursor in a goal to get the context!'
+    return
+  end
+
+  connection.send(commands.make(
+    utilities.current_file(),
+    commands.goal_type_context_norm(goal.id)
+  ))
+end
+
 local function context ()
   local goal = utilities.find_current_goal()
   if not goal then
@@ -237,6 +250,7 @@ return {
   forward                 = forward                  ,
   give                    = give                     ,
   goal_type_context       = goal_type_context        ,
+  goal_type_context_norm  = goal_type_context_norm   ,
   goal_type_context_infer = goal_type_context_infer  ,
   goals                   = goals                    ,
   infer                   = infer                    ,

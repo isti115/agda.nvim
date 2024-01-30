@@ -60,6 +60,7 @@ return {
   forward                 = actions.forward                    ,
   give                    = actions.give                       ,
   goal_type_context       = actions.goal_type_context          ,
+  goal_type_context_norm  = actions.goal_type_context_norm     ,
   goal_type_context_infer = actions.goal_type_context_infer    ,
   goals                   = actions.goals                      ,
   infer                   = actions.infer                      ,

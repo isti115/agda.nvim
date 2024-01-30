@@ -76,6 +76,13 @@ local function goal_type_context (goal_id)
   )
 end
 
+local function goal_type_context_norm (goal_id)
+  return string.format(
+    'Cmd_goal_type_context Normalised %s noRange ""',
+    goal_id
+  )
+end
+
 local function context (goal_id)
   return string.format(
     'Cmd_context Simplified %s noRange ""',
@@ -127,6 +134,7 @@ return ({
   context                 = context                 ,
   give                    = give                    ,
   goal_type_context       = goal_type_context       ,
+  goal_type_context_norm  = goal_type_context_norm  ,
   goal_type_context_infer = goal_type_context_infer ,
   infer                   = infer                   ,
   infer_toplevel          = infer_toplevel          ,
