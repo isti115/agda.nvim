@@ -62,31 +62,24 @@ local function case (goal_id, expression)
   )
 end
 
-local function goal_type_context_infer (goal_id, content)
+local function goal_type_context_infer (mode, goal_id, content)
   return string.format(
-    'Cmd_goal_type_context_infer Simplified %s noRange "%s"',
-    goal_id, content
+    'Cmd_goal_type_context_infer %s %s noRange "%s"',
+    mode, goal_id, content
   )
 end
 
-local function goal_type_context (goal_id)
+local function goal_type_context (mode, goal_id)
   return string.format(
-    'Cmd_goal_type_context Simplified %s noRange ""',
-    goal_id
+    'Cmd_goal_type_context %s %s noRange ""',
+    mode, goal_id
   )
 end
 
-local function goal_type_context_norm (goal_id)
+local function context (mode, goal_id)
   return string.format(
-    'Cmd_goal_type_context Normalised %s noRange ""',
-    goal_id
-  )
-end
-
-local function context (goal_id)
-  return string.format(
-    'Cmd_context Simplified %s noRange ""',
-    goal_id
+    'Cmd_context %s %s noRange ""',
+    mode, goal_id
   )
 end
 
@@ -134,7 +127,6 @@ return ({
   context                 = context                 ,
   give                    = give                    ,
   goal_type_context       = goal_type_context       ,
-  goal_type_context_norm  = goal_type_context_norm  ,
   goal_type_context_infer = goal_type_context_infer ,
   infer                   = infer                   ,
   infer_toplevel          = infer_toplevel          ,
