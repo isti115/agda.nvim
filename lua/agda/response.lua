@@ -236,7 +236,7 @@ local function handle (_, data)
 
     -- require('agda').load()
 
-  elseif message.kind == 'HighlightingInfo' then
+  elseif message.kind == 'HighlightingInfo' and message.direct then
     utilities.update_pos_to_byte()
 
     for _, hl in ipairs(message.info.payload) do
