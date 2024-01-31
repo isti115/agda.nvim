@@ -9,15 +9,15 @@ if g:agda_keymap == "vim"
 
   nnoremap <silent> <LocalLeader>,   :lua require('agda').goal_type_context(require('agda.enums').Rewrite.SIMPLIFIED)<Return>
   nnoremap <silent> <LocalLeader>u,  :lua require('agda').goal_type_context(require('agda.enums').Rewrite.INSTANTIATED)<Return>
-  nnoremap <silent> <LocalLeader>uu, :lua require('agda').goal_type_context(require('agda.enums').Rewrite.NORMALIZED)<Return>
+  nnoremap <silent> <LocalLeader>uu, :lua require('agda').goal_type_context(require('agda.enums').Rewrite.NORMALISED)<Return>
 
   nnoremap <silent> <LocalLeader>.   :lua require('agda').goal_type_context_infer(require('agda.enums').Rewrite.SIMPLIFIED)<Return>
   nnoremap <silent> <LocalLeader>u.  :lua require('agda').goal_type_context_infer(require('agda.enums').Rewrite.INSTANTIATED)<Return>
-  nnoremap <silent> <LocalLeader>uu. :lua require('agda').goal_type_context_infer(require('agda.enums').Rewrite.NORMALIZED)<Return>
+  nnoremap <silent> <LocalLeader>uu. :lua require('agda').goal_type_context_infer(require('agda.enums').Rewrite.NORMALISED)<Return>
 
   nnoremap <silent> <LocalLeader>d   :lua require('agda').infer(require('agda.enums').Rewrite.SIMPLIFIED)<Return>
   nnoremap <silent> <LocalLeader>ud  :lua require('agda').infer(require('agda.enums').Rewrite.INSTANTIATED)<Return>
-  nnoremap <silent> <LocalLeader>uud :lua require('agda').infer(require('agda.enums').Rewrite.NORMALIZED)<Return>
+  nnoremap <silent> <LocalLeader>uud :lua require('agda').infer(require('agda.enums').Rewrite.NORMALISED)<Return>
 
   nnoremap <silent> <LocalLeader>n :lua require('agda').compute()<Return>
   nnoremap <silent> <LocalLeader><Space> :lua require('agda').give()<Return>
@@ -35,15 +35,15 @@ if g:agda_keymap == "emacs"
 
   nnoremap <silent> <C-c><C-,>           :lua require('agda').goal_type_context(require('agda.enums').Rewrite.SIMPLIFIED)<Return>
   nnoremap <silent> <C-u><C-c><C-,>      :lua require('agda').goal_type_context(require('agda.enums').Rewrite.INSTANTIATED)<Return>
-  nnoremap <silent> <C-u><C-u><C-c><C-,> :lua require('agda').goal_type_context(require('agda.enums').Rewrite.NORMALIZED)<Return>
+  nnoremap <silent> <C-u><C-u><C-c><C-,> :lua require('agda').goal_type_context(require('agda.enums').Rewrite.NORMALISED)<Return>
 
   nnoremap <silent> <C-c><C-.>           :lua require('agda').goal_type_context_infer(require('agda.enums').Rewrite.SIMPLIFIED)<Return>
   nnoremap <silent> <C-u><C-c><C-.>      :lua require('agda').goal_type_context_infer(require('agda.enums').Rewrite.INSTANTIATED)<Return>
-  nnoremap <silent> <C-u><C-u><C-c><C-.> :lua require('agda').goal_type_context_infer(require('agda.enums').Rewrite.NORMALIZED)<Return>
+  nnoremap <silent> <C-u><C-u><C-c><C-.> :lua require('agda').goal_type_context_infer(require('agda.enums').Rewrite.NORMALISED)<Return>
 
   nnoremap <silent> <C-c><C-d>           :lua require('agda').infer(require('agda.enums').Rewrite.SIMPLIFIED)<Return>
   nnoremap <silent> <C-u><C-c><C-d>      :lua require('agda').infer(require('agda.enums').Rewrite.INSTANTIATED)<Return>
-  nnoremap <silent> <C-u><C-u><C-c><C-d> :lua require('agda').infer(require('agda.enums').Rewrite.NORMALIZED)<Return>
+  nnoremap <silent> <C-u><C-u><C-c><C-d> :lua require('agda').infer(require('agda.enums').Rewrite.NORMALISED)<Return>
 
   nnoremap <silent> <C-c><C-n> :lua require('agda').compute()<Return>
   nnoremap <silent> <C-c><C-Space> :lua require('agda').give()<Return>
