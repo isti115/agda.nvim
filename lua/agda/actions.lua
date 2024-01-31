@@ -118,7 +118,9 @@ local function refine ()
   ))
 end
 
-local function goal_type_context_infer ()
+local function goal_type_context_infer (mode)
+  mode = mode or enums.Rewrite.SIMPLIFIED
+
   local goal = utilities.find_current_goal()
   if not goal then
     print 'Place the cursor in a goal to get the context!'
@@ -129,11 +131,13 @@ local function goal_type_context_infer ()
 
   connection.send(commands.make(
     utilities.current_file(),
-    commands.goal_type_context_infer(goal.id, content)
+    commands.goal_type_context_infer(mode, goal.id, content)
   ))
 end
 
-local function goal_type_context ()
+local function goal_type_context (mode)
+  mode = mode or enums.Rewrite.SIMPLIFIED
+
   local goal = utilities.find_current_goal()
   if not goal then
     print 'Place the cursor in a goal to get the context!'
@@ -142,11 +146,13 @@ local function goal_type_context ()
 
   connection.send(commands.make(
     utilities.current_file(),
-    commands.goal_type_context(goal.id)
+    commands.goal_type_context(mode, goal.id)
   ))
 end
 
 local function context ()
+  mode = mode or enums.Rewrite.SIMPLIFIED
+
   local goal = utilities.find_current_goal()
   if not goal then
     print 'Place the cursor in a goal to get the context!'
@@ -155,7 +161,7 @@ local function context ()
 
   connection.send(commands.make(
     utilities.current_file(),
-    commands.context(goal.id)
+    commands.context(mode, goal.id)
   ))
 end
 
@@ -200,20 +206,22 @@ local function compute ()
   end
 end
 
-local function infer ()
+local function infer (mode)
+  mode = mode or enums.Rewrite.SIMPLIFIED
+
   local goal = utilities.find_current_goal()
 
   if not goal then
     local expression = vim.fn.input('infer: ')
     connection.send(commands.make(
       utilities.current_file(),
-      commands.infer_toplevel(enums.Rewrite.SIMPLIFIED, expression)
+      commands.infer_toplevel(mode, expression)
     ))
   else
     local expression = utilities.get_goal_content_or_prompt(goal, 'infer: ')
     connection.send(commands.make(
       utilities.current_file(),
-      commands.infer(enums.Rewrite.SIMPLIFIED, goal.id, expression)
+      commands.infer(mode, goal.id, expression)
     ))
   end
 end
